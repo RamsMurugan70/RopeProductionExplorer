@@ -1,0 +1,2102 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PPC Sales Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="js/ppc.js"></script>
+<script src="vendor/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  :root {
+    --navy: #1e2761;
+    --navy-mid: #3e4d93;
+    --navy-light: #5c6fb0;
+    --ice: #cadcfc;
+    --ice-pale: #eef2fc;
+    --coil: #b8804f;
+    --bg: #f7f8fc;
+    --panel: #ffffff;
+    --border: #e2e6f2;
+    --text: #1a1d2b;
+    --text-muted: #5a6478;
+    --danger: #b3432b;
+    --good: #2f7a4f;
+    --shadow: 0 1px 2px rgba(30,39,97,0.06), 0 4px 16px rgba(30,39,97,0.06);
+    --radius: 14px;
+    font-size: 16px;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10121c;
+      --panel: #171a29;
+      --border: #262a3d;
+      --text: #eef0f9;
+      --text-muted: #9aa1bf;
+      --ice-pale: #1c2138;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 4px 20px rgba(0,0,0,0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #10121c;
+    --panel: #171a29;
+    --border: #262a3d;
+    --text: #eef0f9;
+    --text-muted: #9aa1bf;
+    --ice-pale: #1c2138;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 4px 20px rgba(0,0,0,0.35);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Inter", -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, .num-display { font-family: "Newsreader", Georgia, serif; }
+
+  header {
+    background: linear-gradient(135deg, var(--navy) 0%, #262f72 100%);
+    padding: calc(1.1rem + env(safe-area-inset-top, 0px)) 1.25rem 1.35rem;
+    color: #fff;
+  }
+  header .top-row {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
+  }
+  header h1 { margin: 0; font-size: 1.5rem; font-weight: 600; letter-spacing: -0.01em; }
+  header p.sub { margin: 0.3rem 0 0; color: var(--ice); font-size: 0.88rem; }
+  .sync-pill {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 100px; padding: 0.3rem 0.7rem; font-size: 0.72rem; color: var(--ice);
+    white-space: nowrap;
+  }
+  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: #7ee69a; flex: none; }
+  .sync-dot.busy { background: #f5c65c; animation: pulse 1s infinite ease-in-out; }
+  .sync-dot.off { background: #e08a72; }
+  @keyframes pulse { 50% { opacity: 0.35; } }
+
+  main { max-width: 980px; margin: 0 auto; padding: 1.1rem 1.1rem 3rem; }
+
+  .stat-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.7rem; margin: -2.1rem 0 1.4rem;
+  }
+  .stat-card {
+    background: var(--panel); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 0.85rem 1rem; border: 1px solid var(--border);
+  }
+  .stat-card .label { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; }
+  .stat-card .value { font-size: 1.5rem; font-weight: 600; margin-top: 0.15rem; color: var(--navy); }
+  :root[data-theme="dark"] .stat-card .value { color: var(--ice); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .stat-card .value { color: var(--ice); } }
+  .stat-card .unit { font-size: 0.78rem; color: var(--text-muted); font-weight: 400; margin-left: 0.2rem; }
+
+  .panel {
+    background: var(--panel); border-radius: var(--radius); box-shadow: var(--shadow);
+    border: 1px solid var(--border); padding: 1.1rem; margin-bottom: 1.1rem;
+  }
+  .panel h2 { font-size: 1.05rem; margin: 0 0 0.15rem; font-weight: 600; }
+  .panel .hint { font-size: 0.8rem; color: var(--text-muted); margin: 0 0 0.9rem; }
+  .chart-wrap { position: relative; height: 220px; }
+  .barchart { width: 100%; height: 100%; display: flex; }
+  .barchart.empty { align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.85rem; }
+  .bc-v { align-items: flex-end; gap: 10px; padding: 4px 2px 0; }
+  .bc-v .bc-col { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+  .bc-v .bc-stack { width: 100%; max-width: 46px; display: flex; flex-direction: column; justify-content: flex-end; flex: 1; }
+  .bc-v .bc-seg { width: 100%; border-radius: 4px 4px 0 0; min-height: 2px; }
+  .bc-v .bc-seg + .bc-seg { border-radius: 0; }
+  .bc-v .bc-label { margin-top: 6px; font-size: 0.68rem; color: var(--text-muted); white-space: nowrap; }
+  .bc-v .bc-val { font-size: 0.66rem; font-weight: 700; color: var(--text); margin-bottom: 3px; white-space: nowrap; }
+  .lc-wrap { display: flex; width: 100%; height: 100%; }
+  .lc-yaxis { position: relative; width: 58px; flex: 0 0 58px; }
+  .lc-yaxis .lc-ytick { position: absolute; right: 8px; left: 0; transform: translateY(-50%); font-size: 0.64rem; color: var(--text-muted); text-align: right; }
+  .lc-plot { position: relative; flex: 1; min-width: 0; }
+  .lc-inner { position: absolute; top: 18px; right: 4px; bottom: 24px; left: 4px; }
+  .lc-inner .lc-gridline { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--border); }
+  .lc-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .lc-dot { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: var(--navy-mid); transform: translate(-50%, -50%); box-shadow: 0 0 0 2px var(--card, #fff); }
+  .lc-value { position: absolute; font-size: 0.72rem; font-weight: 700; color: var(--navy); white-space: nowrap; transform: translate(-50%, -100%); margin-top: -8px; }
+  .lc-xlabel { position: absolute; bottom: 0; transform: translateX(-50%); font-size: 0.68rem; color: var(--text-muted); white-space: nowrap; }
+  .bc-h { flex-direction: column; justify-content: center; gap: 10px; width: 100%; padding: 2px 0; }
+  .bc-h .bc-row { display: flex; align-items: center; gap: 8px; }
+  .bc-h .bc-row-label { flex: 0 0 auto; font-size: 0.75rem; color: var(--text); width: 30%; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bc-h .bc-bar-track { flex: 1; background: var(--ice-pale); border-radius: 4px; height: 20px; position: relative; }
+  .bc-h .bc-bar-fill { height: 100%; border-radius: 4px; min-width: 3px; }
+  .bc-h .bc-row-value { flex: 0 0 auto; font-size: 0.72rem; color: var(--text-muted); width: 90px; text-align: right; }
+  .bc-legend { display: flex; gap: 14px; justify-content: center; font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; }
+  .bc-legend .dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; }
+
+  .row-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
+  button {
+    font-family: inherit; font-size: 0.85rem; font-weight: 600; border-radius: 10px;
+    padding: 0.6rem 1rem; border: 1px solid transparent; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 0.4rem; transition: transform 0.08s ease, opacity 0.15s;
+  }
+  button:active { transform: scale(0.97); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: var(--navy); color: #fff; }
+  .btn-secondary { background: var(--ice-pale); color: var(--navy); border-color: var(--border); }
+  :root[data-theme="dark"] .btn-secondary { color: var(--ice); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn-secondary { color: var(--ice); } }
+  .btn-ghost { background: transparent; color: var(--text-muted); border-color: var(--border); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th { text-align: left; font-weight: 600; color: var(--text-muted); font-size: 0.72rem;
+       text-transform: none; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); }
+  td { padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr.inv-row { cursor: pointer; }
+  tr.inv-row:hover { background: var(--ice-pale); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .table-scroll { overflow-x: auto; }
+  #liTable { min-width: 1500px; }
+  #liTable th { font-size: 0.7rem; text-transform: uppercase; letter-spacing: .02em; color: var(--text-muted); white-space: nowrap; }
+  #liTable td { white-space: nowrap; }
+  #liTable input, #liTable select { width: 100%; min-width: 68px; border: 1px solid transparent; background: transparent; color: var(--text); font: inherit; padding: 3px 4px; border-radius: 4px; }
+  #liTable input:focus, #liTable select:focus { border-color: var(--navy-mid); outline: none; background: var(--ice-pale); }
+  #liTable td.calc input { color: var(--text-muted); }
+  #liTable td.rm button { padding: 2px 8px; color: var(--danger); border-color: var(--danger); background: transparent; border-radius: 6px; cursor: pointer; }
+  .detail-row td { background: var(--ice-pale); }
+  .detail-row table { background: transparent; }
+  .muted { color: var(--text-muted); }
+  .chip {
+    display: inline-block; font-size: 0.68rem; font-weight: 600; padding: 0.12rem 0.5rem;
+    border-radius: 100px; background: var(--ice-pale); color: var(--navy-mid); border: 1px solid var(--border);
+  }
+  .chip.export { background: #f6e9dc; color: var(--coil); border-color: #e8d2b8; }
+  :root[data-theme="dark"] .chip.export { background: #3a2c1c; color: #d9a877; border-color: #4a3a26; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .chip.export { background: #3a2c1c; color: #d9a877; border-color: #4a3a26; } }
+  .chip.domestic { background: var(--ice-pale); color: var(--navy-mid); }
+  .chip.new { background: #e6f3ea; color: var(--good); border-color: #cbe8d4; margin-left: 0.35rem; }
+  :root[data-theme="dark"] .chip.new { background: #1c3324; color: #7ee69a; border-color: #234431; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .chip.new { background: #1c3324; color: #7ee69a; border-color: #234431; } }
+  .highlight-card {
+    display: flex; align-items: flex-start; gap: 0.7rem;
+    background: linear-gradient(135deg, var(--ice-pale) 0%, var(--panel) 100%);
+    border: 1px solid var(--border); border-left: 4px solid var(--coil);
+    border-radius: 12px; padding: 0.85rem 1rem; margin-bottom: 1.1rem;
+  }
+  .highlight-card .icon { font-size: 1.3rem; line-height: 1; }
+  .highlight-card .title { font-weight: 600; font-size: 0.88rem; margin: 0 0 0.15rem; }
+  .highlight-card .desc { font-size: 0.8rem; color: var(--text-muted); margin: 0; }
+  select {
+    font-family: inherit; font-size: 0.82rem; padding: 0.45rem 0.7rem; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--panel); color: var(--text);
+  }
+
+  .drop-zone {
+    border: 1.5px dashed var(--border); border-radius: 12px; padding: 1.6rem 1rem;
+    text-align: center; color: var(--text-muted); font-size: 0.85rem; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .drop-zone.drag { border-color: var(--navy-light); background: var(--ice-pale); }
+  .drop-zone svg { display: block; margin: 0 auto 0.5rem; opacity: 0.55; }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(10,12,24,0.55); z-index: 50;
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  @media (min-width: 640px) { .modal-overlay { align-items: center; } }
+  .modal {
+    background: var(--panel); width: 100%; max-width: 640px; max-height: 88vh;
+    overflow-y: auto; border-radius: 18px 18px 0 0; padding: 1.2rem 1.2rem calc(1.2rem + env(safe-area-inset-bottom, 0px));
+  }
+  @media (min-width: 640px) { .modal { border-radius: 16px; } }
+  .modal h3 { margin: 0 0 0.9rem; font-size: 1.15rem; }
+  .field { margin-bottom: 0.7rem; }
+  .field label { display: block; font-size: 0.72rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.25rem; }
+  .field input, .field textarea {
+    width: 100%; font-family: inherit; font-size: 0.9rem; padding: 0.55rem 0.65rem;
+    border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text);
+  }
+  .line-item-card {
+    border: 1px solid var(--border); border-radius: 10px; padding: 0.7rem; margin-bottom: 0.6rem;
+    background: var(--ice-pale);
+  }
+  .line-item-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .line-item-grid .field { margin-bottom: 0; }
+  .line-item-grid .full { grid-column: 1 / -1; }
+  .status-banner {
+    padding: 0.7rem 0.9rem; border-radius: 10px; font-size: 0.83rem; margin-bottom: 0.9rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .status-banner.info { background: var(--ice-pale); color: var(--navy-mid); }
+  .status-banner.error { background: #fbe8e2; color: var(--danger); }
+  :root[data-theme="dark"] .status-banner.error { background: #3a1f19; color: #e6a08c; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .status-banner.error { background: #3a1f19; color: #e6a08c; } }
+  .spinner {
+    width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor;
+    border-right-color: transparent; animation: spin 0.7s linear infinite; flex: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .xl-table-wrap { max-height: 46vh; overflow: auto; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 0.8rem; }
+  .xl-table-wrap table { font-size: 0.78rem; }
+  .xl-table-wrap th { position: sticky; top: 0; background: var(--panel); z-index: 1; }
+  .xl-warn { color: var(--danger); font-size: 0.72rem; }
+  .xl-note { font-size: 0.74rem; color: var(--text-muted); margin: 0.2rem 0 0.7rem; }
+  .empty-state { text-align: center; padding: 2.4rem 1rem; color: var(--text-muted); }
+  .empty-state svg { opacity: 0.4; margin-bottom: 0.6rem; }
+  footer.note { max-width: 980px; margin: 0 auto; padding: 0 1.1rem 2rem; font-size: 0.76rem; color: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="top-row">
+    <div>
+      <h1>PPC Sales Dashboard</h1>
+      <p class="sub">Polymer Products Co. LLC &middot; rope sales, live &middot; values in OMR</p>
+    </div>
+    <span class="sync-pill"><span class="sync-dot busy" id="syncDot"></span><span id="syncLabel">Connecting</span></span>
+  </div>
+</header>
+
+<main>
+  <div class="stat-grid" id="statGrid">
+    <div class="stat-card"><div class="label">Total sales</div><div class="value">&hellip;</div></div>
+    <div class="stat-card"><div class="label">Total quantity</div><div class="value">&hellip;</div></div>
+    <div class="stat-card"><div class="label">Invoices</div><div class="value">&hellip;</div></div>
+    <div class="stat-card"><div class="label">Customers</div><div class="value">&hellip;</div></div>
+    <div class="stat-card"><div class="label">Domestic sales</div><div class="value">&hellip;</div></div>
+    <div class="stat-card"><div class="label">Export sales</div><div class="value">&hellip;</div></div>
+  </div>
+
+  <div id="highlightWrap"></div>
+
+  <div class="row-actions">
+    <button class="btn-primary" id="openUploadBtn">Upload invoice</button>
+    <button class="btn-secondary" id="openManualBtn">Add manually</button>
+    <button class="btn-primary" id="openExcelBtn">Upload Excel</button>
+    <button class="btn-secondary" id="exportBtn">Export to Excel (register format)</button>
+  </div>
+
+  <div class="panel">
+    <h2>Month-wise sales</h2>
+    <p class="hint">Total invoiced value by month</p>
+    <div class="chart-wrap"><div id="monthChart" class="barchart"></div></div>
+  </div>
+
+  <div class="panel">
+    <h2>Quantity by month</h2>
+    <p class="hint" id="qtyHint">Total quantity dispatched, in kilograms</p>
+    <div class="chart-wrap"><div id="qtyChart" class="barchart"></div></div>
+  </div>
+
+  <div class="panel">
+    <h2>PP vs HDPE quantity by month</h2>
+    <p class="hint" id="resinHint">Kilograms sold each month by material (PP = polypropylene, PE = HDPE), using each line&rsquo;s Resin as in the sales register; where a line has no Resin, it is worked out from the description.</p>
+    <div class="field" style="max-width:320px;margin-bottom:0.6rem;"><label for="resinCust">View customer</label><select id="resinCust"><option value="">All customers</option></select></div>
+    <div class="chart-wrap"><div id="resinChart" class="barchart"></div></div>
+    <div class="table-scroll" style="margin-top:0.8rem;"><table id="resinTable"></table></div>
+  </div>
+
+  <div class="panel">
+    <h2>New customers by month</h2>
+    <p class="hint">Customers billed for the first time that month, split domestic / export</p>
+    <div class="chart-wrap"><div id="newCustChart" class="barchart"></div></div>
+  </div>
+
+  <div class="panel">
+    <h2>Export vs. domestic</h2>
+    <p class="hint">Share of total sales value by market</p>
+    <div class="chart-wrap" style="height:150px;"><div id="segmentChart" class="barchart"></div></div>
+  </div>
+
+  <div class="panel">
+    <h2>Customer-wise sales</h2>
+    <p class="hint">Top customers by total invoiced value</p>
+    <div class="chart-wrap"><div id="customerChart" class="barchart"></div></div>
+  </div>
+
+  <div class="panel">
+    <h2>Invoices</h2>
+    <div class="row-actions" style="margin-bottom:0.8rem;">
+      <select id="monthFilter"><option value="">All months</option></select>
+    </div>
+    <div class="table-scroll">
+      <table id="invTable">
+        <thead>
+          <tr><th>Invoice</th><th>Date</th><th>Customer</th><th>Market</th><th class="num">Rolls</th><th class="num">Qty (Kg)</th><th class="num">Total (OMR)</th><th></th></tr>
+        </thead>
+        <tbody id="invTableBody">
+          <tr><td colspan="8" class="muted">Loading&hellip;</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Line items</h2>
+    <p class="hint">Detailed line-item entry, matching the sales register columns exactly. Shared with everyone on this dashboard.</p>
+    <div class="row-actions" style="margin-bottom:0.8rem;">
+      <button class="btn-primary" id="liAddBtn">+ Add row</button>
+      <button class="btn-primary" id="liExcelBtn">Upload Excel</button>
+      <button class="btn-secondary" id="liUploadBtn">Upload invoice</button>
+      <button class="btn-secondary" id="liExportBtn">Export line items</button>
+      <button class="btn-ghost" id="liClearBtn">Clear all</button>
+    </div>
+    <div class="table-scroll">
+      <table id="liTable">
+        <thead>
+          <tr>
+            <th>Invoice #</th><th>Date</th><th>Segment</th><th>Resin</th><th>Customer ID</th><th>Customer Name</th>
+            <th>Description</th><th>No of Coils</th><th>Quantity</th><th>Unit</th><th>Unit Price (OMR)</th>
+            <th>Taxable Amount</th><th>Tax Rate</th><th>Tax Due</th><th>Gross Value (OMR)</th><th>Invoice Value (OMR)</th>
+            <th>Receipt (OMR)</th><th>Deposited in Bank</th><th>Round Off</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="liTableBody"><tr><td colspan="20" class="muted">Loading&hellip;</td></tr></tbody>
+      </table>
+    </div>
+    <p class="hint" id="liTotals" style="margin-top:0.6rem;"></p>
+  </div>
+</main>
+
+<div class="modal-overlay" id="liUploadOverlay" style="display:none;">
+  <div class="modal">
+    <h3>Upload invoice</h3>
+    <p class="hint" style="margin-top:-0.5rem;">A PDF, photo or screenshot of the invoice. Lines will be read in for you to review &mdash; nothing is added until you check them.</p>
+    <input type="file" accept="application/pdf,.pdf,image/*" id="liFileInput" style="width:100%; margin:0.7rem 0;">
+    <div id="liUploadStatus" class="hint"></div>
+    <div class="row-actions" style="margin-top:0.9rem;"><button class="btn-ghost" id="liCancelUpload">Cancel</button></div>
+  </div>
+</div>
+
+<footer class="note">
+  Shared dashboard &mdash; everyone with access sees the same data and can add invoices. Upload an Excel sales register or new invoices to keep it current.
+</footer>
+
+<div class="modal-overlay" id="modalOverlay" style="display:none;">
+  <div class="modal" id="modalBody"></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Seed data (from the invoices already compiled with the user) ----------
+  var SEED_INVOICES = [];
+  // (coils, kg, invoice value). Line detail was not captured - upload the register Excel
+  // to replace these with full line items.
+  var SEED_V3 = [];
+
+  // ---------- State ----------
+  var invoices = {};          // no -> doc data
+  var db = null, assetsCap = null, sampleCap = null, downloadsCap = null;
+  var monthChart = null, customerChart = null, qtyChart = null, newCustChart = null, segmentChart = null;
+  var monthFilterValue = "";
+  var pendingExtract = null;  // {items,...} being reviewed in the modal
+
+  var MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  function fmt(n, d) {
+    if (n === null || n === undefined || isNaN(n)) return "&ndash;";
+    d = d === undefined ? 3 : d;
+    return Number(n).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+  }
+  function esc(s) {
+    var div = document.createElement("div");
+    div.textContent = s === null || s === undefined ? "" : String(s);
+    return div.innerHTML;
+  }
+  function monthKey(dateStr) {
+    if (!dateStr || dateStr.length < 7) return "unknown";
+    return dateStr.slice(0, 7);
+  }
+  function monthLabel(key) {
+    if (key === "unknown") return "Unknown";
+    var parts = key.split("-");
+    var y = parts[0], m = parseInt(parts[1], 10) - 1;
+    return MONTH_NAMES[m] + " " + y;
+  }
+  function setSync(state, label) {
+    var dot = document.getElementById("syncDot");
+    dot.className = "sync-dot" + (state === "busy" ? " busy" : state === "off" ? " off" : "");
+    document.getElementById("syncLabel").textContent = !window.__offline ? label : PPC.mode === "viewer" ? "Published figures" : PPC.mode === "publisher" ? "Draft on this computer" : "Saved in this browser";
+  }
+
+  // ---------- Offline / saved-copy storage ----------
+  // When this page is opened as a downloaded file there is no shared database. Everything
+  // still works: data is kept in this browser (localStorage) and Export to Excel makes a file.
+  var EMBEDDED_DATA = {"invoices":{},"lineItems":{}};
+  function makeLocalDb(published, readOnly) {
+    var KEY = "ppc_sales_dashboard_v5", store = null, subs = {};
+    if (!readOnly) { try { var raw = localStorage.getItem(KEY); if (raw) store = JSON.parse(raw); } catch (e) {} }
+    if (!store && published) store = JSON.parse(JSON.stringify(published));
+    if (!store) {
+      store = EMBEDDED_DATA ? JSON.parse(JSON.stringify(EMBEDDED_DATA)) : { invoices: {}, lineItems: {} };
+      if (!EMBEDDED_DATA) SEED_INVOICES.concat(SEED_V3).forEach(function (inv) { store.invoices[inv.no] = inv; });
+    }
+    store.meta = store.meta || {};
+    ["seed", "seedV2", "seedV3"].forEach(function (k) { store.meta[k] = store.meta[k] || { done: true }; });
+    function persist() { if (readOnly) return; try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} }
+    function snap(c) {
+      var o = store[c] || {};
+      return { docs: Object.keys(o).map(function (id) { return { id: id, exists: true, data: function () { return JSON.parse(JSON.stringify(o[id])); } }; }) };
+    }
+    function notify(c) { (subs[c] || []).forEach(function (fn) { try { fn(snap(c)); } catch (e) {} }); }
+    function docRef(c, id) {
+      return {
+        get: async function () { var d = store[c] && store[c][id]; return { exists: !!d, data: function () { return d; } }; },
+        set: async function (d) { if (readOnly) return; (store[c] = store[c] || {})[id] = JSON.parse(JSON.stringify(d)); persist(); notify(c); },
+        update: async function (d) { if (readOnly) return; var o = (store[c] = store[c] || {}); o[id] = Object.assign({}, o[id] || {}, JSON.parse(JSON.stringify(d))); persist(); notify(c); },
+        delete: async function () { if (readOnly) return; if (store[c]) delete store[c][id]; persist(); notify(c); }
+      };
+    }
+    return {
+      collection: function (c) {
+        return {
+          doc: function (id) { return docRef(c, id); },
+          onSnapshot: function (ok) { (subs[c] = subs[c] || []).push(ok); setTimeout(function () { ok(snap(c)); }, 0); return function () {}; }
+        };
+      },
+      doc: function (path) { var p = path.split("/"); return docRef(p[0], p[1]); },
+      draftKey: KEY,
+      contents: function () { return { invoices: store.invoices || {}, lineItems: store.lineItems || {} }; }
+    };
+  }
+
+  // ---------- Capability init ----------
+  async function init() {
+    try {
+      db = (window.claude && window.claude.use) ? await window.claude.use("db") : null;
+    } catch (e) { db = null; }
+    assetsCap = null; sampleCap = null; downloadsCap = null;
+    try { assetsCap = window.claude ? await window.claude.use("assets") : null; } catch (e) {}
+    try { sampleCap = window.claude ? await window.claude.use("sample") : null; } catch (e) {}
+    try { downloadsCap = window.claude ? await window.claude.use("downloads") : null; } catch (e) {}
+
+    if (!db) {
+      window.__offline = true;
+      var pub = await PPC.start();
+      var pubSales = pub && pub.sales ? pub.sales : null;
+      db = makeLocalDb(pubSales && pubSales.data, PPC.mode === "viewer");
+      var fn = document.querySelector("footer.note");
+      if (PPC.mode === "standalone") {
+        if (fn) fn.innerHTML += " <strong>This is an offline copy:</strong> what you add or edit here is kept in this browser only &mdash; use Export to Excel to keep a file.";
+      } else if (fn) {
+        fn.textContent = PPC.mode === "viewer" ? "Everyone with this link sees the same published figures." : "Changes you make stay on this computer until you press Publish.";
+      }
+      ["openUploadBtn", "openManualBtn", "openExcelBtn", "liAddBtn", "liExcelBtn", "liUploadBtn", "liClearBtn"].forEach(function (id) { document.getElementById(id).classList.add("ppc-pub-only"); });
+      var ppcSource = pubSales ? pubSales.source : "";
+      PPC.mountBar({
+        discard: function () { try { localStorage.removeItem(db.draftKey); } catch (e) {} location.reload(); },
+        sets: [{
+          id: "sales",
+          dirty: function () { try { return localStorage.getItem(db.draftKey) !== null; } catch (e) { return false; } },
+          source: function () { return ppcSource.replace(/ \+ edited on the Dashboard$/, "") + (ppcSource ? " + edited on the Dashboard" : "Sales Dashboard"); },
+          payload: function () { return db.contents(); },
+          onPublished: function (v) { ppcSource = v.source; try { localStorage.removeItem(db.draftKey); } catch (e) {} }
+        }]
+      });
+      PPC.ready();
+      var ob = document.getElementById("openUploadBtn");
+      if (ob) { ob.title = "Reading invoice photos needs the online dashboard \u2014 use Upload Excel or Add manually here."; }
+    }
+
+    subscribeInvoices();
+    maybeSeed();
+    correctInvoiceData().then(addV3Invoices);
+    if (window.__liSubscribe) window.__liSubscribe();
+  }
+
+  // One-time correction: the original seed had accurate invoice totals (OMR) but no
+  // total quantity. This rewrites every invoice with the full line-item data and exact
+  async function correctInvoiceData() {
+    try {
+      var marker = await db.doc("meta/seedV2").get();
+      if (marker.exists) return;
+      setSync("busy", "Correcting quantities");
+      var writes = SEED_INVOICES.map(function (inv) {
+        return db.collection("invoices").doc(inv.no).set(inv);
+      });
+      await Promise.all(writes);
+      await db.doc("meta/seedV2").set({ correctedAt: new Date().toISOString(), count: SEED_INVOICES.length, totalQty: SEED_INVOICES.reduce(function (s, i) { return s + (i.qty || 0); }, 0) });
+      setSync("ok", "Synced");
+    } catch (e) {
+      // Another viewer likely corrected it concurrently — fine either way.
+    }
+  }
+  function custKey(c) {
+    return String(c || "").toLowerCase().replace(/[.,\-]/g, " ").replace(/\s+/g, " ").trim();
+  }
+  function cleanName(c) { return String(c || "").replace(/[ \t]+/g, " ").replace(/\s*\n\s*/g, "\n").trim(); }
+  function normalizeCustomers(map) {
+    var list = Object.keys(map).map(function (k) { return map[k]; });
+    list.sort(function (a, b) { return (a.date || "").localeCompare(b.date || ""); });
+    var canon = {};
+    list.forEach(function (inv) {
+      var k = custKey(inv.customer); if (!k) return;
+      if (!canon[k]) canon[k] = inv.customer;
+    });
+    var out = {};
+    Object.keys(map).forEach(function (no) {
+      var inv = map[no], k = custKey(inv.customer);
+      out[no] = k && canon[k] !== inv.customer ? Object.assign({}, inv, { customer: canon[k] }) : inv;
+    });
+    return out;
+  }
+  async function addV3Invoices() {
+    try {
+      var marker = await db.doc("meta/seedV3").get();
+      if (marker.exists) return;
+      await Promise.all(SEED_V3.map(function (inv) {
+        return db.collection("invoices").doc(inv.no).get().then(function (d) {
+          if (d.exists) return null; // never overwrite something already uploaded
+          return db.collection("invoices").doc(inv.no).set(inv);
+        });
+      }));
+      await db.doc("meta/seedV3").set({ addedAt: new Date().toISOString(), count: SEED_V3.length });
+    } catch (e) {}
+  }
+
+  function subscribeInvoices() {
+    db.collection("invoices").onSnapshot(function (snap) {
+      invoices = {};
+      snap.docs.forEach(function (d) {
+        var data = d.data();
+        if (data) invoices[d.id] = data;
+      });
+      invoices = normalizeCustomers(invoices);
+      setSync("ok", "Synced");
+      scheduleRender();
+    }, function (err) {
+      setSync("off", "Sync error");
+    });
+  }
+
+  // A bulk write (e.g. the one-time data correction below) fires many rapid snapshot
+  // events; redrawing all five Chart.js charts on every single one of them can make a
+  // chart's canvas get torn down mid-redraw and end up stuck blank. Collapse bursts of
+  // updates into a single render a beat later instead.
+  var renderTimer = null;
+  window.__reRender = function () { scheduleRender(); };
+  function scheduleRender() {
+    if (renderTimer) clearTimeout(renderTimer);
+    renderTimer = setTimeout(function () { renderTimer = null; render(); }, 120);
+  }
+
+  async function maybeSeed() {
+    try {
+      var marker = await db.doc("meta/seed").get();
+      if (marker.exists) return;
+      setSync("busy", "Loading history");
+      var writes = SEED_INVOICES.map(function (inv) {
+        return db.collection("invoices").doc(inv.no).set(inv);
+      });
+      await Promise.all(writes);
+      await db.doc("meta/seed").set({ seededAt: new Date().toISOString(), count: SEED_INVOICES.length });
+    } catch (e) {
+      // Another viewer likely seeded concurrently, or db rejected a duplicate create — fine either way.
+    }
+  }
+
+  // ---------- Rendering ----------
+  function render() {
+    var list = Object.keys(invoices).map(function (k) { return invoices[k]; });
+    list.sort(function (a, b) { return (a.date || "").localeCompare(b.date || ""); });
+
+    safe(renderStats, list);
+    safe(renderHighlight, list);
+    safe(renderMonthChart, list);
+    safe(renderQtyChart, list);
+    safe(renderResinChart, list);
+    safe(renderNewCustomerChart, list);
+    safe(renderSegmentChart, list);
+    safe(renderCustomerChart, list);
+    safe(renderMonthFilterOptions, list);
+    safe(renderTable, list);
+  }
+  function safe(fn, arg) {
+    try { fn(arg); } catch (e) { /* one chart's failure shouldn't blank the rest */ }
+  }
+  // Plain HTML/CSS bar builders — no external library, no network request, so these
+  // always render regardless of network restrictions that might block a CDN script.
+  function bcEsc(v) { return esc(String(v)); }
+  function buildVBar(containerId, entries, unit, fmtDigits) {
+    var el = document.getElementById(containerId);
+    if (!entries.length) { el.className = "barchart empty"; el.innerHTML = "No data yet."; return; }
+    el.className = "barchart bc-v";
+    var max = Math.max.apply(null, entries.map(function (e) { return e.value; }).concat([0.0001]));
+    el.innerHTML = entries.map(function (e) {
+      var h = Math.max(2, Math.round((e.value / max) * 100));
+      return '<div class="bc-col">' +
+        '<div class="bc-val">' + bcEsc(fmt(e.value, fmtDigits)) + '</div>' +
+        '<div class="bc-stack"><div class="bc-seg" style="height:' + h + '%; background:' + e.color + ';"></div></div>' +
+        '<div class="bc-label">' + bcEsc(e.label) + "</div></div>";
+    }).join("");
+  }
+  function buildLineChart(containerId, entries, unit, fmtDigits) {
+    var el = document.getElementById(containerId);
+    if (!entries.length) { el.className = "barchart empty"; el.innerHTML = "No data yet."; return; }
+    el.className = "barchart";
+    var n = entries.length;
+    var rawMax = Math.max.apply(null, entries.map(function (e) { return e.value; }).concat([0.0001]));
+    var niceMax = niceCeil(rawMax);
+    var pts = entries.map(function (e, i) {
+      var x = n > 1 ? (i / (n - 1)) * 100 : 50;
+      var y = niceMax > 0 ? 100 - (e.value / niceMax) * 100 : 100;
+      return { x: x, y: y, value: e.value, label: e.label };
+    });
+    var polyPoints = pts.map(function (p) { return p.x + "," + p.y; }).join(" ");
+    var dots = pts.map(function (p) {
+      return '<div class="lc-dot" style="left:' + p.x + '%; top:' + p.y + '%;" title="' + bcEsc(e_fmt(p.value, unit, fmtDigits)) + '"></div>' +
+        '<div class="lc-value" style="left:' + p.x + '%; top:' + p.y + '%;">' + bcEsc(fmt(p.value, fmtDigits)) + "</div>";
+    }).join("");
+    var xlabels = pts.map(function (p) {
+      return '<div class="lc-xlabel" style="left:' + p.x + '%;">' + bcEsc(p.label) + "</div>";
+    }).join("");
+    var tickCount = 4, yaxis = "", gridlines = "";
+    for (var i = 0; i <= tickCount; i++) {
+      var tv = niceMax * i / tickCount;
+      var ty = 100 - (i * (100 / tickCount));
+      yaxis += '<div class="lc-ytick" style="top:' + ty + '%;">' + bcEsc(fmt(tv, tv >= 100 ? 0 : fmtDigits)) + "</div>";
+      gridlines += '<div class="lc-gridline" style="top:' + ty + '%;"></div>';
+    }
+    el.innerHTML = '<div class="lc-wrap"><div class="lc-yaxis">' + yaxis + '</div>' +
+      '<div class="lc-plot"><div class="lc-inner">' + gridlines +
+      '<svg class="lc-svg" viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points="' + polyPoints + '" fill="none" style="stroke:var(--navy-mid); stroke-width:1.5;" vector-effect="non-scaling-stroke"/></svg>' +
+      dots + "</div>" + xlabels + "</div></div>";
+  }
+  function e_fmt(v, unit, d) { return fmt(v, d) + " " + unit; }
+  function buildVStack(containerId, labels, series) {
+    var el = document.getElementById(containerId);
+    if (!labels.length) { el.className = "barchart empty"; el.innerHTML = "No data yet."; return; }
+    el.className = "barchart bc-v";
+    var totals = labels.map(function (_, i) { return series.reduce(function (s, ser) { return s + ser.values[i]; }, 0); });
+    var max = Math.max.apply(null, totals.concat([1]));
+    var cols = labels.map(function (lab, i) {
+      var segs = series.map(function (ser) {
+        var v = ser.values[i];
+        if (!v) return "";
+        var h = Math.round((v / max) * 100);
+        return '<div class="bc-seg" style="height:' + h + '%; background:' + ser.color + ';" title="' + bcEsc(ser.name + ": " + v) + '"></div>';
+      }).join("");
+      return '<div class="bc-col"><div class="bc-stack">' + segs + '</div><div class="bc-label">' + bcEsc(lab) + "</div></div>";
+    }).join("");
+    var legend = '<div class="bc-legend">' + series.map(function (ser) {
+      return '<span><span class="dot" style="background:' + ser.color + ';"></span>' + bcEsc(ser.name) + "</span>";
+    }).join("") + "</div>";
+    el.innerHTML = '<div style="display:flex; flex-direction:column; width:100%; height:100%;"><div class="bc-v" style="flex:1; display:flex; align-items:flex-end; gap:10px; padding:4px 2px 0;">' + cols + "</div>" + legend + "</div>";
+  }
+  function buildHBar(containerId, entries, unit, fmtDigits) {
+    var el = document.getElementById(containerId);
+    if (!entries.length) { el.className = "barchart empty"; el.innerHTML = "No data yet."; return; }
+    el.className = "barchart bc-h";
+    var max = Math.max.apply(null, entries.map(function (e) { return e.value; }).concat([0.0001]));
+    el.innerHTML = entries.map(function (e) {
+      var w = Math.max(2, Math.round((e.value / max) * 100));
+      return '<div class="bc-row"><div class="bc-row-label">' + bcEsc(e.label) + '</div>' +
+        '<div class="bc-bar-track"><div class="bc-bar-fill" style="width:' + w + '%; background:' + e.color + ';"></div></div>' +
+        '<div class="bc-row-value">' + bcEsc(fmt(e.value, fmtDigits) + " " + unit) + "</div></div>";
+    }).join("");
+  }
+
+  function niceCeil(n) {
+    if (n <= 0) return 1;
+    var exp = Math.floor(Math.log(n) / Math.LN10);
+    var base = Math.pow(10, exp);
+    var f = n / base;
+    var niceF = f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10;
+    return niceF * base;
+  }
+  function customerFirstSeen(list) {
+    var map = {};
+    list.forEach(function (inv) {
+      var c = inv.customer;
+      if (!c) return;
+      if (!map[c] || inv.date < map[c].date) map[c] = { date: inv.date, segment: inv.segment || "domestic" };
+    });
+    return map;
+  }
+
+  function renderStats(list) {
+    var total = 0, qty = 0, hasQty = false, customers = {}, domesticTotal = 0, exportTotal = 0;
+    list.forEach(function (inv) {
+      total += Number(inv.total) || 0;
+      if (inv.qty != null) { qty += Number(inv.qty); hasQty = true; }
+      if (inv.customer) customers[inv.customer] = true;
+      if ((inv.segment || "domestic") === "export") exportTotal += Number(inv.total) || 0;
+      else domesticTotal += Number(inv.total) || 0;
+    });
+
+    var grid = document.getElementById("statGrid");
+    grid.innerHTML =
+      statCard("Total sales", fmt(total, 3), "OMR") +
+      statCard("Total quantity", hasQty ? fmt(qty, 0) : "&ndash;", hasQty ? "Kg" : "") +
+      statCard("Invoices", String(list.length), "") +
+      statCard("Customers", String(Object.keys(customers).length), "") +
+      statCard("Domestic sales", fmt(domesticTotal, 3), "OMR") +
+      statCard("Export sales", fmt(exportTotal, 3), "OMR");
+  }
+
+  function renderHighlight(list) {
+    var wrap = document.getElementById("highlightWrap");
+    var firstSeen = customerFirstSeen(list);
+    var months = {};
+    list.forEach(function (inv) { months[monthKey(inv.date)] = true; });
+    var sortedMonths = Object.keys(months).filter(function (m) { return m !== "unknown"; }).sort();
+    var latest = sortedMonths.length ? sortedMonths[sortedMonths.length - 1] : null;
+    if (!latest) { wrap.innerHTML = ""; return; }
+
+    var newExportThisMonth = Object.keys(firstSeen).filter(function (c) {
+      return monthKey(firstSeen[c].date) === latest && firstSeen[c].segment === "export";
+    });
+
+    if (!newExportThisMonth.length) { wrap.innerHTML = ""; return; }
+    wrap.innerHTML = newExportThisMonth.map(function (c) {
+      return '<div class="highlight-card"><div class="icon">\uD83C\uDF0D</div><div>' +
+        '<p class="title">New export customer &mdash; ' + monthLabel(latest) + '</p>' +
+        '<p class="desc"><strong>' + esc(c) + '</strong> was billed for the first time this month, on an export (zero-VAT) basis.</p>' +
+        "</div></div>";
+    }).join("");
+  }
+  function statCard(label, value, unit) {
+    return '<div class="stat-card"><div class="label">' + esc(label) + '</div>' +
+      '<div class="value">' + value + (unit ? '<span class="unit">' + esc(unit) + '</span>' : '') + '</div></div>';
+  }
+
+  function renderMonthChart(list) {
+    var byMonth = {};
+    list.forEach(function (inv) {
+      var mk = monthKey(inv.date);
+      byMonth[mk] = (byMonth[mk] || 0) + (Number(inv.total) || 0);
+    });
+    var keys = Object.keys(byMonth).sort();
+    var shades = ["#cadcfc", "#a3bbee", "#5c6fb0", "#3e4d93", "#28347a", "#1e2761"];
+    var entries = keys.map(function (k, i) {
+      return { label: monthLabel(k), value: Math.round(byMonth[k] * 1000) / 1000, color: shades[Math.min(i, shades.length - 1)] };
+    });
+    buildLineChart("monthChart", entries, "OMR", 3);
+  }
+
+  function renderCustomerChart(list) {
+    var byCust = {};
+    list.forEach(function (inv) {
+      var c = inv.customer || "Unknown";
+      byCust[c] = (byCust[c] || 0) + (Number(inv.total) || 0);
+    });
+    var entries = Object.keys(byCust).map(function (c) { return [c, byCust[c]]; });
+    entries.sort(function (a, b) { return b[1] - a[1]; });
+    var top = entries.slice(0, 5);
+    var rest = entries.slice(5).reduce(function (s, e) { return s + e[1]; }, 0);
+    if (rest > 0) top.push(["Others", rest]);
+    var shades = ["#1e2761", "#3e4d93", "#5c6fb0", "#8fa3d9", "#cadcfc", "#e4ecfb"];
+    var data = top.map(function (e, i) { return { label: e[0], value: Math.round(e[1] * 1000) / 1000, color: shades[Math.min(i, shades.length - 1)] }; });
+    buildHBar("customerChart", data, "OMR", 3);
+  }
+
+  function renderQtyChart(list) {
+    var byMonth = {}, knownMonths = {}, unknownMonths = {};
+    list.forEach(function (inv) {
+      var mk = monthKey(inv.date);
+      if (inv.qty != null) {
+        byMonth[mk] = (byMonth[mk] || 0) + Number(inv.qty);
+        knownMonths[mk] = true;
+      } else {
+        unknownMonths[mk] = true;
+      }
+    });
+    var allMonths = {};
+    list.forEach(function (inv) { allMonths[monthKey(inv.date)] = true; });
+    var keys = Object.keys(allMonths).sort();
+    var hint = document.getElementById("qtyHint");
+    var missing = keys.filter(function (k) { return unknownMonths[k] && !knownMonths[k]; });
+    if (missing.length) {
+      hint.textContent = "Total quantity dispatched, in kilograms. No quantity was recorded on invoices from " +
+        missing.map(monthLabel).join(", ") + " (value-only source documents), so those months show as zero here.";
+    } else {
+      hint.textContent = "Total quantity dispatched, in kilograms.";
+    }
+    var entries = keys.map(function (k) {
+      return { label: monthLabel(k), value: byMonth[k] ? Math.round(byMonth[k]) : 0, color: "#5c6fb0" };
+    });
+    buildVBar("qtyChart", entries, "Kg", 0);
+  }
+
+  // ---------- PP vs HDPE quantity by month ----------
+  function resinOf(desc) {
+    var u = String(desc || "").toUpperCase();
+    if (/\bHDPE\b/.test(u)) return "HDPE";
+    if (/\bPP\b/.test(u)) return "PP";
+    if (/\bPE\b/.test(u)) return "HDPE";
+    if (/DANLINE|POLYPROP/.test(u)) return "PP";
+    return "Other";
+  }
+  var resinCustSel = "";
+  function renderResinChart(fullList) {
+    var by = {};
+    var sel = document.getElementById("resinCust");
+    if (sel) {
+      var names = {};
+      fullList.forEach(function (inv) { if (inv.customer) names[inv.customer] = 1; });
+      var nl = Object.keys(names).sort(function (a, b) { return a.toLowerCase() < b.toLowerCase() ? -1 : 1; });
+      if (!names[resinCustSel]) resinCustSel = "";
+      sel.innerHTML = '<option value="">All customers</option>' + nl.map(function (c) {
+        return '<option value="' + esc(c) + '"' + (c === resinCustSel ? " selected" : "") + '>' + esc(c) + '</option>';
+      }).join("");
+      if (!sel.__bound) {
+        sel.__bound = true;
+        sel.addEventListener("change", function () { resinCustSel = sel.value; scheduleRender(); });
+      }
+    }
+    var list = resinCustSel ? fullList.filter(function (inv) { return inv.customer === resinCustSel; }) : fullList;
+    list.forEach(function (inv) {
+      var mk = monthKey(inv.date); if (mk === "unknown") return;
+      var m = by[mk] || (by[mk] = { PP: 0, HDPE: 0, Other: 0 });
+      var items = inv.items || [], used = 0;
+      var liRows = window.__liItemsFor ? window.__liItemsFor(inv.no) : [];
+      items.forEach(function (it) {
+        if (it.qty == null) return;
+        var r = "Other";
+        if (!/per sales register/i.test(it.desc || "")) {
+          // 1) the Resin entered on that line (as in the sales register)  2) PP/PE named in the description  3) bailer twine = PP
+          var want = String(it.desc || "").trim().toUpperCase();
+          var lr = liRows.filter(function (x) {
+            return String(x.description || "").trim().toUpperCase() === want && Math.abs((parseFloat(x.qty) || 0) - (Number(it.qty) || 0)) < 0.0005;
+          })[0];
+          var rv = String(it.resin || "").trim().toUpperCase();
+          if (!rv) rv = String(lr && lr.resin || "").trim().toUpperCase();
+          if (rv === "PP") r = "PP";
+          else if (rv === "PE" || rv === "HDPE") r = "HDPE";
+          else {
+            r = resinOf(it.desc);
+            if (r === "Other" && /BAIL?ER/.test(want)) r = "PP";
+          }
+        }
+        m[r] += Number(it.qty) || 0; used += Number(it.qty) || 0;
+      });
+      if (!items.length && inv.qty != null) m.Other += Number(inv.qty) || 0;
+    });
+    var keys = Object.keys(by).sort();
+    var el = document.getElementById("resinChart"), tb = document.getElementById("resinTable");
+    if (!keys.length) { el.className = "barchart empty"; el.innerHTML = "No data yet."; tb.innerHTML = ""; return; }
+    var series = [["PP", "#3e4d93"], ["HDPE", "#b8804f"], ["Other", "#cadcfc"]];
+    var max = Math.max.apply(null, keys.map(function (k) { return by[k].PP + by[k].HDPE + by[k].Other; }).concat([1]));
+    var anyOther = keys.some(function (k) { return by[k].Other > 0.5; });
+    el.className = "barchart";
+    el.innerHTML = '<div style="display:flex;flex-direction:column;width:100%;height:100%;"><div style="flex:1;display:flex;align-items:flex-end;gap:10px;padding:4px 2px 0;">' +
+      keys.map(function (k) {
+        var tot = by[k].PP + by[k].HDPE + by[k].Other;
+        var segs = series.map(function (sr) {
+          var v = by[k][sr[0]]; if (!(v > 0.5)) return "";
+          return '<div style="width:100%;height:' + Math.max(2, Math.round(v / max * 100)) + '%;background:' + sr[1] + ';" title="' + esc(sr[0] + ": " + Math.round(v).toLocaleString("en-US") + " kg") + '"></div>';
+        }).join("");
+        return '<div style="flex:1;min-width:0;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;">' +
+          '<div class="bc-val">' + Math.round(tot).toLocaleString("en-US") + '</div>' +
+          '<div style="width:100%;max-width:46px;flex:1;display:flex;flex-direction:column;justify-content:flex-end;">' + segs + '</div>' +
+          '<div class="bc-label">' + esc(monthLabel(k)) + '</div></div>';
+      }).join("") + '</div><div class="bc-legend">' + series.filter(function (sr) { return sr[0] !== "Other" || anyOther; }).map(function (sr) {
+        return '<span><span class="dot" style="background:' + sr[1] + ';"></span>' + (sr[0] === "Other" ? "Not split / other" : sr[0]) + '</span>';
+      }).join("") + '</div></div>';
+    function n(v) { return Math.round(v).toLocaleString("en-US"); }
+    function pct(v, t) { return t ? (v / t * 100).toFixed(0) + "%" : "–"; }
+    var gp = 0, gh = 0, go = 0;
+    var rows = keys.map(function (k) {
+      var m = by[k], t = m.PP + m.HDPE + m.Other; gp += m.PP; gh += m.HDPE; go += m.Other;
+      return '<tr><td>' + esc(monthLabel(k)) + '</td><td class="num">' + n(m.PP) + '</td><td class="num">' + n(m.HDPE) + '</td>' +
+        (anyOther ? '<td class="num">' + n(m.Other) + '</td>' : '') + '<td class="num"><strong>' + n(t) + '</strong></td><td class="num">' + pct(m.PP, t) + ' / ' + pct(m.HDPE, t) + '</td></tr>';
+    }).join("");
+    var gt = gp + gh + go;
+    tb.innerHTML = '<thead><tr><th>Month</th><th class="num">PP (kg)</th><th class="num">HDPE (kg)</th>' + (anyOther ? '<th class="num">Not split (kg)</th>' : '') + '<th class="num">Total (kg)</th><th class="num">PP / HDPE share</th></tr></thead><tbody>' + rows +
+      '<tr><td><strong>Total</strong></td><td class="num"><strong>' + n(gp) + '</strong></td><td class="num"><strong>' + n(gh) + '</strong></td>' + (anyOther ? '<td class="num"><strong>' + n(go) + '</strong></td>' : '') +
+      '<td class="num"><strong>' + n(gt) + '</strong></td><td class="num">' + pct(gp, gt) + ' / ' + pct(gh, gt) + '</td></tr></tbody>';
+  }
+
+  function renderNewCustomerChart(list) {
+    var firstSeen = customerFirstSeen(list);
+    var byMonth = {};
+    Object.keys(firstSeen).forEach(function (c) {
+      var mk = monthKey(firstSeen[c].date);
+      if (!byMonth[mk]) byMonth[mk] = { domestic: 0, export: 0 };
+      byMonth[mk][firstSeen[c].segment === "export" ? "export" : "domestic"]++;
+    });
+    var keys = Object.keys(byMonth).sort();
+    var labels = keys.map(monthLabel);
+    var domestic = keys.map(function (k) { return byMonth[k].domestic; });
+    var exportVals = keys.map(function (k) { return byMonth[k].export; });
+    buildVStack("newCustChart", labels, [
+      { name: "Domestic", color: "#3e4d93", values: domestic },
+      { name: "Export", color: "#b8804f", values: exportVals }
+    ]);
+  }
+
+  function renderSegmentChart(list) {
+    var domestic = 0, exportVal = 0;
+    list.forEach(function (inv) {
+      if ((inv.segment || "domestic") === "export") exportVal += Number(inv.total) || 0;
+      else domestic += Number(inv.total) || 0;
+    });
+    buildHBar("segmentChart", [
+      { label: "Domestic", value: Math.round(domestic * 1000) / 1000, color: "#3e4d93" },
+      { label: "Export", value: Math.round(exportVal * 1000) / 1000, color: "#b8804f" }
+    ], "OMR", 3);
+  }
+
+  function renderMonthFilterOptions(list) {
+    var sel = document.getElementById("monthFilter");
+    var keys = {};
+    list.forEach(function (inv) { keys[monthKey(inv.date)] = true; });
+    var sorted = Object.keys(keys).sort();
+    var current = monthFilterValue;
+    sel.innerHTML = '<option value="">All months</option>' +
+      sorted.map(function (k) { return '<option value="' + k + '">' + monthLabel(k) + "</option>"; }).join("");
+    sel.value = sorted.indexOf(current) >= 0 ? current : "";
+  }
+
+  function renderTable(list) {
+    var body = document.getElementById("invTableBody");
+    var filtered = monthFilterValue ? list.filter(function (inv) { return monthKey(inv.date) === monthFilterValue; }) : list;
+    filtered.sort(function (a, b) { return (b.date || "").localeCompare(a.date || ""); });
+
+    if (!filtered.length) {
+      body.innerHTML = '<tr><td colspan="8" class="muted">No invoices yet.</td></tr>';
+      return;
+    }
+    var firstSeen = customerFirstSeen(Object.keys(invoices).map(function (k) { return invoices[k]; }));
+    var html = "";
+    filtered.forEach(function (inv, i) {
+      var rid = "det_" + i;
+      var seg = inv.segment || "domestic";
+      var isNew = inv.customer && firstSeen[inv.customer] && firstSeen[inv.customer].date === inv.date;
+      html += '<tr class="inv-row" data-target="' + rid + '">' +
+        "<td><strong>" + esc(inv.no) + "</strong></td>" +
+        "<td>" + esc(inv.date) + "</td>" +
+        "<td>" + esc(inv.customer) + (isNew ? '<span class="chip new">New</span>' : "") + "</td>" +
+        '<td><span class="chip ' + seg + '">' + (seg === "export" ? "Export" : "Domestic") + "</span></td>" +
+        '<td class="num">' + (inv.rolls != null ? esc(inv.rolls) : "&ndash;") + "</td>" +
+        '<td class="num">' + (inv.qty != null ? fmt(inv.qty, 3) : "&ndash;") + "</td>" +
+        '<td class="num">' + fmt(inv.total, 3) + "</td>" +
+        '<td><button class="btn-secondary ed-btn" data-no="' + esc(inv.no) + '" style="padding:0.25rem 0.7rem;">Edit</button></td>' +
+        "</tr>";
+      html += '<tr class="detail-row" id="' + rid + '" style="display:none;"><td colspan="8">' + renderLineItems(inv) + "</td></tr>";
+    });
+    body.innerHTML = html;
+    Array.prototype.forEach.call(body.querySelectorAll(".ed-btn"), function (b) {
+      b.addEventListener("click", function (e) { e.stopPropagation(); openEditInvoice(b.getAttribute("data-no")); });
+    });
+
+    Array.prototype.forEach.call(body.querySelectorAll(".inv-row"), function (row) {
+      row.addEventListener("click", function () {
+        var det = document.getElementById(row.getAttribute("data-target"));
+        det.style.display = det.style.display === "none" ? "table-row" : "none";
+      });
+    });
+  }
+
+  function renderLineItems(inv) {
+    if (!inv.items || !inv.items.length) return '<span class="muted">No line items.</span>';
+    var rows = inv.items.map(function (it) {
+      return "<tr>" +
+        "<td>" + esc(it.desc) + "</td>" +
+        '<td class="num">' + (it.rolls != null ? esc(it.rolls) : "&ndash;") + "</td>" +
+        '<td class="num">' + (it.qty != null ? fmt(it.qty, 3) : "&ndash;") + "</td>" +
+        '<td class="num">' + (it.price != null ? fmt(it.price, 3) : "&ndash;") + "</td>" +
+        '<td class="num">' + (it.vat != null ? fmt(it.vat, 3) : "&ndash;") + "</td>" +
+        '<td class="num">' + fmt(it.total, 3) + "</td>" +
+        "</tr>";
+    }).join("");
+    return '<table style="margin-top:0.2rem;"><thead><tr><th>Item</th><th class="num">Rolls</th>' +
+      '<th class="num">Qty (Kg)</th><th class="num">Price</th><th class="num">VAT</th><th class="num">Total</th></tr></thead>' +
+      "<tbody>" + rows + "</tbody></table>" +
+      (inv.roundOff != null ? '<p class="muted" style="margin:0.5rem 0 0;font-size:0.78rem;">Round off: ' + fmt(inv.roundOff, 3) + " OMR</p>" : "");
+  }
+
+  // ---------- Modal: manual entry / review-extracted ----------
+  function openModal(html) {
+    document.getElementById("modalBody").innerHTML = html;
+    document.getElementById("modalOverlay").style.display = "flex";
+  }
+  function closeModal() {
+    document.getElementById("modalOverlay").style.display = "none";
+    document.getElementById("modalBody").innerHTML = "";
+    document.getElementById("modalBody").style.maxWidth = "";
+    pendingExtract = null;
+  }
+  document.getElementById("modalOverlay").addEventListener("click", function (e) {
+    if (e.target === document.getElementById("modalOverlay")) closeModal();
+  });
+
+  function lineItemCardHtml(idx, it) {
+    it = it || {};
+    var rate = it.rate;
+    if (rate == null) {
+      if (it.vat != null && it.taxable) rate = Math.round((it.vat / it.taxable) * 1000) / 10;
+      else if (it.vat === 0) rate = 0;
+      else rate = 5;
+    }
+    var taxable = it.taxable != null ? it.taxable : (it.qty != null && it.price != null ? Math.round(it.qty * it.price * 1000) / 1000 : "");
+    return '<div class="line-item-card" data-idx="' + idx + '">' +
+      '<div class="field"><label>Description</label><input class="li-desc" value="' + esc(it.desc || "") + '"></div>' +
+      '<div class="line-item-grid">' +
+      '<div class="field"><label>Rolls</label><input class="li-rolls" type="number" step="1" value="' + (it.rolls != null ? it.rolls : "") + '"></div>' +
+      '<div class="field"><label>Qty (Kg)</label><input class="li-qty" type="number" step="0.001" value="' + (it.qty != null ? it.qty : "") + '"></div>' +
+      '<div class="field"><label>Unit price (OMR)</label><input class="li-price" type="number" step="0.001" value="' + (it.price != null ? it.price : "") + '"></div>' +
+      '<div class="field"><label>VAT rate (%)</label><input class="li-rate" type="number" step="0.1" value="' + rate + '"></div>' +
+      '<div class="field"><label>Taxable amount (OMR)</label><input class="li-taxable" type="number" step="0.001" value="' + taxable + '"></div>' +
+      '<div class="field"><label>VAT / tax due (OMR)</label><input class="li-vat" type="number" step="0.001" value="' + (it.vat != null ? it.vat : "") + '"></div>' +
+      '<div class="field full"><label>Gross value / line total (OMR)</label><input class="li-total" type="number" step="0.001" value="' + (it.total != null ? it.total : "") + '"></div>' +
+      "</div>" +
+      '<button class="btn-ghost li-remove" style="margin-top:0.5rem;">Remove item</button>' +
+      "</div>";
+  }
+
+  // Once qty, price or the VAT rate changes on a line, work out taxable amount, VAT and
+  // gross value automatically; then refresh the invoice value shown under the items.
+  function recalcLineCard(card) {
+    var qty = parseFloat(card.querySelector(".li-qty").value);
+    var price = parseFloat(card.querySelector(".li-price").value);
+    var rate = parseFloat(card.querySelector(".li-rate").value);
+    if (isNaN(rate)) rate = 0;
+    if (!isNaN(qty) && !isNaN(price)) {
+      var taxable = Math.round(qty * price * 1000) / 1000;
+      var vat = Math.round(taxable * rate / 100 * 1000) / 1000;
+      card.querySelector(".li-taxable").value = taxable;
+      card.querySelector(".li-vat").value = vat;
+      card.querySelector(".li-total").value = Math.round((taxable + vat) * 1000) / 1000;
+    }
+  }
+  function recalcInvoiceValue() {
+    var sum = 0;
+    Array.prototype.forEach.call(document.querySelectorAll(".line-item-card .li-total"), function (inp) {
+      var v = parseFloat(inp.value); if (!isNaN(v)) sum += v;
+    });
+    var ro = parseFloat(document.getElementById("f_roundoff").value);
+    if (!isNaN(ro)) sum += ro;
+    var out = document.getElementById("invoiceValueOut");
+    if (out) out.textContent = (Math.round(sum * 1000) / 1000).toLocaleString("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 3 }) + " OMR";
+  }
+  function wireCalc(scope) {
+    Array.prototype.forEach.call((scope || document).querySelectorAll(".line-item-card"), function (card) {
+      if (card.__wired) return;
+      card.__wired = true;
+      card.addEventListener("input", function (e) {
+        var c = e.target.className;
+        if (c.indexOf("li-qty") !== -1 || c.indexOf("li-price") !== -1 || c.indexOf("li-rate") !== -1) recalcLineCard(card);
+        else if (c.indexOf("li-taxable") !== -1) {
+          var t = parseFloat(e.target.value), r = parseFloat(card.querySelector(".li-rate").value) || 0;
+          if (!isNaN(t)) {
+            var v = Math.round(t * r / 100 * 1000) / 1000;
+            card.querySelector(".li-vat").value = v;
+            card.querySelector(".li-total").value = Math.round((t + v) * 1000) / 1000;
+          }
+        }
+        recalcInvoiceValue();
+      });
+    });
+  }
+
+  function openReviewModal(prefill, sourceLabel) {
+    prefill = prefill || { no: "", date: "", customer: "", items: [{}], roundOff: null };
+    var itemsHtml = (prefill.items && prefill.items.length ? prefill.items : [{}]).map(function (it, i) {
+      return lineItemCardHtml(i, it);
+    }).join("");
+
+    openModal(
+      '<h3>' + (sourceLabel ? "Review extracted invoice" : "Add invoice") + '</h3>' +
+      (sourceLabel ? '<div class="status-banner info">' + esc(sourceLabel) + " &mdash; check the figures below before saving.</div>" : "") +
+      '<div id="modalError"></div>' +
+      '<div class="field"><label>Invoice number</label><input id="f_no" value="' + esc(prefill.no || "") + '"></div>' +
+      '<div class="line-item-grid" style="margin-bottom:0.7rem;">' +
+      '<div class="field"><label>Date (YYYY-MM-DD)</label><input id="f_date" value="' + esc(prefill.date || "") + '"></div>' +
+      '<div class="field"><label>Market</label><select id="f_segment">' +
+      '<option value="domestic"' + (prefill.segment !== "export" ? " selected" : "") + '>Domestic</option>' +
+      '<option value="export"' + (prefill.segment === "export" ? " selected" : "") + '>Export</option>' +
+      "</select></div>" +
+      '<div class="field"><label>Round off (OMR)</label><input id="f_roundoff" type="number" step="0.001" value="' + (prefill.roundOff != null ? prefill.roundOff : "") + '"></div>' +
+      '<div class="field full"><label>Customer</label><input id="f_customer" value="' + esc(prefill.customer || "") + '"></div>' +
+      "</div>" +
+      '<div id="lineItemsWrap">' + itemsHtml + "</div>" +
+      '<button class="btn-ghost" id="addLineItemBtn" style="margin-bottom:0.8rem;">+ Add line item</button>' +
+      '<div style="display:flex; justify-content:space-between; align-items:baseline; padding:0.7rem 0.9rem; margin-bottom:1rem; background:var(--ice-pale); border-radius:8px;"><span style="font-size:0.8rem; color:var(--text-muted);">Invoice value (lines + round off)</span><strong id="invoiceValueOut" style="font-size:1.05rem;">&ndash;</strong></div>' +
+      '<div class="row-actions">' +
+      '<button class="btn-primary" id="saveInvoiceBtn">Save to dashboard</button>' +
+      '<button class="btn-ghost" id="cancelModalBtn">Cancel</button>' +
+      "</div>"
+    );
+
+    document.getElementById("cancelModalBtn").addEventListener("click", closeModal);
+    document.getElementById("addLineItemBtn").addEventListener("click", function () {
+      var wrap = document.getElementById("lineItemsWrap");
+      var div = document.createElement("div");
+      div.innerHTML = lineItemCardHtml(wrap.children.length, {});
+      wrap.appendChild(div.firstChild);
+      wireRemoveButtons();
+      wireCalc(wrap);
+    });
+    wireRemoveButtons();
+    wireCalc(document);
+    document.getElementById("f_roundoff").addEventListener("input", recalcInvoiceValue);
+    recalcInvoiceValue();
+    document.getElementById("saveInvoiceBtn").addEventListener("click", saveInvoiceFromModal);
+  }
+  function wireRemoveButtons() {
+    Array.prototype.forEach.call(document.querySelectorAll(".li-remove"), function (btn) {
+      btn.onclick = function () {
+        var cards = document.querySelectorAll(".line-item-card");
+        if (cards.length <= 1) { btn.closest(".line-item-card").querySelectorAll("input").forEach(function (i) { i.value = ""; }); recalcInvoiceValue(); return; }
+        btn.closest(".line-item-card").remove();
+        recalcInvoiceValue();
+      };
+    });
+  }
+
+  async function saveInvoiceFromModal() {
+    var no = document.getElementById("f_no").value.trim();
+    var date = document.getElementById("f_date").value.trim();
+    var customer = document.getElementById("f_customer").value.trim();
+    var segment = document.getElementById("f_segment").value === "export" ? "export" : "domestic";
+    var roundOffRaw = document.getElementById("f_roundoff").value;
+    var errBox = document.getElementById("modalError");
+
+    if (!no || !date || !customer) {
+      errBox.innerHTML = '<div class="status-banner error">Invoice number, date and customer are required.</div>';
+      return;
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      errBox.innerHTML = '<div class="status-banner error">Date must be in YYYY-MM-DD format.</div>';
+      return;
+    }
+
+    var items = [];
+    Array.prototype.forEach.call(document.querySelectorAll(".line-item-card"), function (card) {
+      var desc = card.querySelector(".li-desc").value.trim();
+      var total = parseFloat(card.querySelector(".li-total").value);
+      if (!desc && isNaN(total)) return;
+      items.push({
+        desc: desc || "Item",
+        rolls: numOrNull(card.querySelector(".li-rolls").value),
+        qty: numOrNull(card.querySelector(".li-qty").value),
+        price: numOrNull(card.querySelector(".li-price").value),
+        vat: numOrNull(card.querySelector(".li-vat").value),
+        taxable: numOrNull(card.querySelector(".li-taxable").value),
+        total: isNaN(total) ? 0 : total
+      });
+    });
+    if (!items.length) {
+      errBox.innerHTML = '<div class="status-banner error">Add at least one line item with a total.</div>';
+      return;
+    }
+
+    var total = items.reduce(function (s, it) { return s + (Number(it.total) || 0); }, 0);
+    var roundOff = numOrNull(roundOffRaw);
+    if (roundOff !== null) total += roundOff;
+    var rolls = items.every(function (it) { return it.rolls != null; }) ? items.reduce(function (s, it) { return s + it.rolls; }, 0) : null;
+    var qty = items.every(function (it) { return it.qty != null; }) ? items.reduce(function (s, it) { return s + it.qty; }, 0) : null;
+
+    var doc = { no: no, date: date, customer: customer, segment: segment, items: items, roundOff: roundOff, rolls: rolls, qty: qty, total: Math.round(total * 1000) / 1000, source: "upload", addedAt: new Date().toISOString() };
+    if (pendingExtract && pendingExtract.assetId) doc.imageAssetId = pendingExtract.assetId;
+
+    var btn = document.getElementById("saveInvoiceBtn");
+    btn.disabled = true; btn.textContent = "Saving\u2026";
+    try {
+      if (!db) throw new Error("no-db");
+      await db.collection("invoices").doc(no).set(doc);
+      closeModal();
+    } catch (e) {
+      errBox.innerHTML = '<div class="status-banner error">Could not save &mdash; check your connection and try again.</div>';
+      btn.disabled = false; btn.textContent = "Save to dashboard";
+    }
+  }
+  function numOrNull(v) {
+    if (v === "" || v === null || v === undefined) return null;
+    var n = parseFloat(v);
+    return isNaN(n) ? null : n;
+  }
+
+  // ---------- Manual add ----------
+  document.getElementById("openManualBtn").addEventListener("click", function () {
+    openReviewModal({ no: "", date: "", customer: "", segment: "domestic", items: [{}] }, null);
+  });
+
+  // ---------- Upload + extract ----------
+  document.getElementById("openUploadBtn").addEventListener("click", openUploadModal);
+
+  function openUploadModal() {
+    openModal(
+      '<h3>Upload invoice</h3>' +
+      '<p class="hint" style="margin-top:-0.5rem;">A PDF, photo or screenshot of the invoice. Claude will read the figures &mdash; you\u2019ll review them before anything is saved.</p>' +
+      '<div class="drop-zone" id="dropZone">' +
+      '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>' +
+      "Tap to choose a PDF or image, or drop one here" +
+      '</div>' +
+      '<input type="file" id="fileInput" accept="application/pdf,.pdf,image/jpeg,image/png,image/webp,image/gif" style="display:none;">' +
+      '<div id="uploadStatus"></div>' +
+      '<div class="row-actions" style="margin-top:0.9rem;"><button class="btn-ghost" id="cancelUploadBtn">Cancel</button></div>'
+    );
+    document.getElementById("cancelUploadBtn").addEventListener("click", closeModal);
+    var zone = document.getElementById("dropZone");
+    var input = document.getElementById("fileInput");
+    zone.addEventListener("click", function () { input.click(); });
+    input.addEventListener("change", function () { if (input.files[0]) handleInvoiceFile(input.files[0]); });
+    ["dragover", "dragleave", "drop"].forEach(function (evt) {
+      zone.addEventListener(evt, function (e) {
+        e.preventDefault();
+        zone.classList.toggle("drag", evt === "dragover");
+        if (evt === "drop" && e.dataTransfer.files[0]) handleInvoiceFile(e.dataTransfer.files[0]);
+      });
+    });
+  }
+
+  // The reader takes images only, so a PDF is turned into page images here first.
+  async function fileToImages(file, maxCount) {
+    var isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name || "");
+    if (!isPdf) return [file];
+    if (!window.pdfjsLib) throw { code: "pdf_unavailable" };
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    var pdf = await window.pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+    var n = Math.min(pdf.numPages, maxCount || 4, 4);
+    var out = [];
+    for (var i = 1; i <= n; i++) {
+      var page = await pdf.getPage(i);
+      var base = page.getViewport({ scale: 1 });
+      var scale = Math.min(2.5, 1400 / base.width);
+      var vp = page.getViewport({ scale: scale });
+      var canvas = document.createElement("canvas");
+      canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
+      await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp }).promise;
+      var blob = await new Promise(function (res) { canvas.toBlob(res, "image/png"); });
+      out.push(blob);
+    }
+    return out;
+  }
+
+  async function handleInvoiceFile(file) {
+    var statusBox = document.getElementById("uploadStatus");
+    if (!sampleCap) {
+      statusBox.innerHTML = '<div class="status-banner error">Automatic reading isn\u2019t available in this view. Use \u201cAdd manually\u201d instead.</div>';
+      return;
+    }
+    statusBox.innerHTML = '<div class="status-banner info"><span class="spinner"></span>Reading the invoice\u2026 this can take up to a minute.</div>';
+
+    var prompt = "You are reading a sales invoice from Polymer Products Co. LLC, an Omani rope manufacturer, from a photo, screenshot or PDF pages. " +
+      "Extract the data as a single JSON object, no other text, matching exactly this shape:\n" +
+      '{"invoiceNo": string, "date": "YYYY-MM-DD", "customer": string, ' +
+      '"items": [{"desc": string, "rolls": number|null, "qty": number|null, "price": number|null, "vat": number|null, "taxable": number|null, "total": number}], ' +
+      '"roundOff": number|null, "total": number}\n' +
+      "Rules: qty is the quantity in kilograms if shown. price, taxable, vat, total and roundOff are in OMR. " +
+      "If VAT is not shown on the invoice (e.g. a zero-rated export), use 0 for vat. " +
+      "If a field is not present on the invoice, use null for it. Reply with ONLY the JSON object.";
+
+    try {
+      var caps = await sampleCap.limits().catch(function () { return null; });
+      if (!caps || !caps.images) {
+        statusBox.innerHTML = '<div class="status-banner error">This view can\u2019t read images. Use \u201cAdd manually\u201d instead.</div>';
+        return;
+      }
+      var imgs = await fileToImages(file, caps.images.maxCount);
+      var data = await sampleCap.json(prompt, { images: imgs, modelTier: "default", cache: false });
+      var items = Array.isArray(data.items) ? data.items.map(function (it) {
+        return { desc: it.desc || "", rolls: it.rolls, qty: it.qty, price: it.price, vat: it.vat, taxable: it.taxable, total: it.total };
+      }) : [];
+      // Best-effort guess: an invoice with no VAT on any line usually means a zero-rated export.
+      var allZeroVat = items.length > 0 && items.every(function (it) { return !it.vat; });
+      var normalized = {
+        no: data.invoiceNo || "",
+        date: data.date || "",
+        customer: data.customer || "",
+        segment: allZeroVat ? "export" : "domestic",
+        roundOff: (typeof data.roundOff === "number") ? data.roundOff : null,
+        items: items
+      };
+
+      var assetId = null;
+      if (assetsCap) {
+        try {
+          var res = await assetsCap.upload(file);
+          assetId = res.id;
+        } catch (e) { /* keep going without the stored image */ }
+      }
+      pendingExtract = { assetId: assetId };
+      closeModal();
+      openReviewModal(normalized, "Read from " + file.name);
+    } catch (e) {
+      var msg = "Could not read that file.";
+      if (e && e.code === "pdf_unavailable") msg = "The PDF reader couldn\u2019t load \u2014 check your internet connection, or upload a photo of the invoice instead.";
+      if (e && e.code === "not_granted") msg = "Reading invoices needs your permission \u2014 try again and accept the prompt.";
+      else if (e && e.code === "rate_limited") msg = "Too many requests right now \u2014 wait a moment and try again.";
+      else if (e && e.code === "image_rejected") msg = "That file couldn\u2019t be read \u2014 try a clearer photo or a different format.";
+      statusBox.innerHTML = '<div class="status-banner error">' + esc(msg) + ' You can still use \u201cAdd manually\u201d.</div>';
+    }
+  }
+
+  // ---------- Upload Excel (sales register) ----------
+  var XL_ALIASES = {
+    invoiceNo: ["invoice", "invoiceno", "invoicenumber", "invno", "invoicenum", "bill", "billno"],
+    date: ["date", "invoicedate", "invdate"],
+    segment: ["segment", "market", "type"],
+    resin: ["resin", "material"],
+    customerId: ["customerid", "custid", "customercode", "custcode"],
+    customerName: ["customername", "customer", "custname", "party", "partyname"],
+    description: ["description", "item", "itemdescription", "product", "particulars"],
+    coils: ["noofcoils", "coils", "rolls", "noofrolls", "nos"],
+    qty: ["quantity", "qty", "qtykg", "qtykgs", "weight", "kgs"],
+    unit: ["unit", "uom"],
+    unitPrice: ["unitpriceomr", "unitprice", "price", "rate", "priceperkg", "pricekg"],
+    taxable: ["taxableamount", "taxable", "taxablevalue", "netamount"],
+    taxRate: ["taxrate", "vatrate", "vatpercent", "tax"],
+    taxDue: ["taxdue", "vat", "vatamount", "taxamount"],
+    gross: ["grossvalueomr", "grossvalue", "gross", "linetotal", "total", "amount"],
+    invoiceValue: ["invoicevalueomr", "invoicevalue", "invoicetotal"],
+    receipt: ["receiptomr", "receipt"],
+    deposited: ["depositedinbank", "deposited", "bank"],
+    roundOff: ["roundoff", "rounding"]
+  };
+  var XL_TEMPLATE_HEADERS = ["Invoice #", "Date", "SEGMENT", "RESIN", "Customer ID", "Customer Name", "Description", "No of Coils", "Quantity", "Unit", "Unit Price (OMR)", "Taxable Amount", "Tax Rate", "Tax Due", "Gross Value (OMR)", "Invoice Value (OMR)", "Receipt (OMR)", "Deposited in Bank", "ROUND OFF"];
+
+  function xlNorm(h) { return String(h == null ? "" : h).toLowerCase().replace(/[^a-z0-9]/g, ""); }
+  function xlNum(v) {
+    if (v === null || v === undefined || v === "") return null;
+    if (typeof v === "number") return isFinite(v) ? v : null;
+    var t = String(v).replace(/[,\s]/g, "").replace(/^\((.*)\)$/, "-$1").replace(/OMR|KGS?/ig, "");
+    var pct = /%$/.test(t); t = t.replace(/%$/, "");
+    var n = parseFloat(t);
+    if (isNaN(n)) return null;
+    return pct ? n / 100 : n;
+  }
+  var XL_MON = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, sept: 9, oct: 10, nov: 11, dec: 12 };
+  function xlPad(n) { return (n < 10 ? "0" : "") + n; }
+  function xlDate(v) {
+    if (v === null || v === undefined || v === "") return "";
+    if (v instanceof Date && !isNaN(v)) return v.getFullYear() + "-" + xlPad(v.getMonth() + 1) + "-" + xlPad(v.getDate());
+    if (typeof v === "number") {
+      var p = window.XLSX && XLSX.SSF ? XLSX.SSF.parse_date_code(v) : null;
+      return p ? p.y + "-" + xlPad(p.m) + "-" + xlPad(p.d) : "";
+    }
+    var t = String(v).trim(), m;
+    if ((m = t.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/))) return m[1] + "-" + xlPad(+m[2]) + "-" + xlPad(+m[3]);
+    if ((m = t.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/))) {
+      var y = +m[3]; if (y < 100) y += 2000;
+      return y + "-" + xlPad(+m[2]) + "-" + xlPad(+m[1]); // day first, as in Oman
+    }
+    if ((m = t.match(/^(\d{1,2})[-\s\/]([A-Za-z]{3,9})[-\s\/,]*(\d{2,4})/))) {
+      var mo = XL_MON[m[2].slice(0, 4).toLowerCase()] || XL_MON[m[2].slice(0, 3).toLowerCase()];
+      var yy = +m[3]; if (yy < 100) yy += 2000;
+      if (mo) return yy + "-" + xlPad(mo) + "-" + xlPad(+m[1]);
+    }
+    return "";
+  }
+  function xlR3(n) { return Math.round(n * 1000) / 1000; }
+
+  // Turn sheet rows into invoices. Returns {invoices:[...], rows:n, problems:[...]}
+  function parseRegisterRows(aoa) {
+    var hdrIdx = -1, colMap = {};
+    for (var i = 0; i < Math.min(aoa.length, 15); i++) {
+      var map = {}, hits = 0;
+      (aoa[i] || []).forEach(function (cell, ci) {
+        var k = xlNorm(cell); if (!k) return;
+        Object.keys(XL_ALIASES).forEach(function (f) {
+          if (map[f] === undefined && XL_ALIASES[f].indexOf(k) !== -1) { map[f] = ci; hits++; }
+        });
+      });
+      if (map.invoiceNo !== undefined && hits >= 4) { hdrIdx = i; colMap = map; break; }
+    }
+    if (hdrIdx < 0) return { error: "Couldn't find a header row. The sheet needs columns such as Invoice #, Date, Customer Name, Description, Quantity, Unit Price." };
+
+    var byNo = {}, order = [], rows = 0;
+    var last = { no: "", date: "", cust: "", custId: "", seg: "" };
+    function get(r, f) { return colMap[f] === undefined ? null : r[colMap[f]]; }
+    for (var j = hdrIdx + 1; j < aoa.length; j++) {
+      var r = aoa[j] || [];
+      var qty = xlNum(get(r, "qty")), price = xlNum(get(r, "unitPrice")), gross = xlNum(get(r, "gross"));
+      var desc = String(get(r, "description") == null ? "" : get(r, "description")).trim();
+      var no = String(get(r, "invoiceNo") == null ? "" : get(r, "invoiceNo")).replace(/\s+/g, "");
+      if (!no && qty === null && gross === null && !desc) continue;           // blank row
+      if (/^(grand\s*)?total/i.test(no) || /^(grand\s*)?total/i.test(desc)) break; // totals row: nothing below it is an invoice
+      if (!no) no = last.no; else last.no = no;
+      if (!no) continue;
+      var d = xlDate(get(r, "date")) || (no === last.noForDate ? last.date : "");
+      if (d) { last.date = d; last.noForDate = no; }
+      var cust = cleanName(get(r, "customerName")) || (byNo[no] ? byNo[no].customer : "");
+      var segRaw = String(get(r, "segment") == null ? "" : get(r, "segment")).trim().toLowerCase();
+      var inv = byNo[no];
+      if (!inv) { inv = byNo[no] = { no: no, date: d, customer: cust, segment: segRaw.indexOf("exp") === 0 ? "export" : segRaw ? "domestic" : "", items: [], roundOff: null, _lines: [], warnings: [] }; order.push(no); }
+      if (!inv.date && d) inv.date = d;
+      if (!inv.customer && cust) inv.customer = cust;
+      if (!inv.segment && segRaw) inv.segment = segRaw.indexOf("exp") === 0 ? "export" : "domestic";
+
+      var rate = xlNum(get(r, "taxRate"));
+      if (rate !== null && rate > 1) rate = rate / 100;
+      var taxable = xlNum(get(r, "taxable"));
+      if (taxable === null && qty !== null && price !== null) taxable = xlR3(qty * price);
+      var vat = xlNum(get(r, "taxDue"));
+      if (vat === null && taxable !== null && rate !== null) vat = xlR3(taxable * rate);
+      if (gross === null && taxable !== null) gross = xlR3(taxable + (vat || 0));
+      if (gross === null) gross = 0;
+      if (taxable !== null) taxable = xlR3(taxable);
+      if (vat !== null) vat = xlR3(vat);
+      gross = xlR3(gross);
+      var ro = xlNum(get(r, "roundOff"));
+      if (ro && inv.roundOff === null) inv.roundOff = ro;
+      var coils = xlNum(get(r, "coils"));
+      inv._lines.push({
+        resin: String(get(r, "resin") == null ? "" : get(r, "resin")).trim(),
+        customerId: String(get(r, "customerId") == null ? "" : get(r, "customerId")).trim(),
+        unit: String(get(r, "unit") == null ? "KGS" : get(r, "unit")).trim() || "KGS",
+        receipt: xlNum(get(r, "receipt")), deposited: String(get(r, "deposited") == null ? "" : get(r, "deposited")).trim(),
+        rate: rate
+      });
+      inv.items.push({ desc: desc || "Item", rolls: coils, qty: qty, price: price, vat: vat, taxable: taxable, total: gross, resin: inv._lines[inv._lines.length - 1].resin });
+      rows++;
+    }
+
+    var problems = [];
+    var result = order.map(function (no) {
+      var inv = byNo[no];
+      // identical neighbouring lines are usually a double-keyed row - flag, don't silently drop
+      for (var a = 1; a < inv.items.length; a++) {
+        var x = inv.items[a - 1], y = inv.items[a];
+        if (x.desc === y.desc && x.qty === y.qty && x.price === y.price && x.qty) { inv.warnings.push("Line " + (a + 1) + " repeats the line above (" + y.qty + " kg) - check it isn't a duplicate"); }
+      }
+      var allZeroTax = inv._lines.length && inv._lines.every(function (l) { return l.rate === 0; });
+      if (!inv.segment) inv.segment = allZeroTax ? "export" : "domestic";
+      var sum = inv.items.reduce(function (s, it) { return s + (Number(it.total) || 0); }, 0);
+      inv.total = xlR3(sum + (inv.roundOff || 0));
+      var allQty = inv.items.every(function (it) { return it.qty !== null; });
+      inv.qty = allQty ? xlR3(inv.items.reduce(function (s, it) { return s + it.qty; }, 0)) : null;
+      var allRolls = inv.items.every(function (it) { return it.rolls !== null; });
+      inv.rolls = allRolls ? inv.items.reduce(function (s, it) { return s + it.rolls; }, 0) : null;
+      if (!inv.date) inv.error = "Date missing or not recognised";
+      else if (!inv.customer) inv.error = "Customer name missing";
+      return inv;
+    });
+    return { invoices: result, rows: rows, problems: problems };
+  }
+
+  var xlState = null; // {invoices, sel:{no:true}}
+
+  function openExcelModal() {
+    var m = document.getElementById("modalBody");
+    m.style.maxWidth = "900px";
+    openModal(
+      '<h3>Upload Excel sales register</h3>' +
+      '<p class="hint" style="margin-top:-0.5rem;">Add further invoices from an Excel (.xlsx, .xls) or .csv sheet in the sales-register layout. You’ll see a preview first; nothing is saved until you confirm.</p>' +
+      '<div class="drop-zone" id="xlDrop">' +
+      '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>' +
+      'Tap to choose an Excel file, or drop one here</div>' +
+      '<input type="file" id="xlInput" accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv" style="display:none;">' +
+      '<div id="xlStatus" style="margin-top:0.8rem;"></div>' +
+      '<p class="xl-note">Columns read: ' + esc(XL_TEMPLATE_HEADERS.join(", ")) + '. Headers can be in any order; dates as DD/MM/YYYY, DD.MM.YYYY or YYYY-MM-DD. A segment of EXPORT marks an export sale. Rows with a blank invoice number continue the invoice above. After choosing the file, set the From and To dates — only invoices inside that range are imported. Invoices already on the dashboard are skipped unless you tick them to overwrite.</p>' +
+      '<div class="row-actions" style="margin-top:0.4rem;"><button class="btn-ghost" id="xlTemplateBtn">Download template (your register layout)</button><button class="btn-ghost" id="xlCancelBtn">Cancel</button></div>'
+    );
+    document.getElementById("xlCancelBtn").addEventListener("click", closeModal);
+    document.getElementById("xlTemplateBtn").addEventListener("click", xlDownloadTemplate);
+    var zone = document.getElementById("xlDrop"), input = document.getElementById("xlInput");
+    zone.addEventListener("click", function () { input.click(); });
+    input.addEventListener("change", function () { if (input.files[0]) handleExcelFile(input.files[0]); });
+    ["dragover", "dragleave", "drop"].forEach(function (evt) {
+      zone.addEventListener(evt, function (e) {
+        e.preventDefault();
+        zone.classList.toggle("drag", evt === "dragover");
+        if (evt === "drop" && e.dataTransfer.files[0]) handleExcelFile(e.dataTransfer.files[0]);
+      });
+    });
+  }
+  document.getElementById("openExcelBtn").addEventListener("click", openExcelModal);
+  document.getElementById("liExcelBtn").addEventListener("click", openExcelModal);
+
+  async function xlDownloadTemplate() {
+    if (!window.XLSX) { alert("The Excel library couldn’t load — check your connection."); return; }
+    var aoa = [XL_TEMPLATE_HEADERS.concat(["Column1", "Column2"]),
+      ["INV001", "17/06/2026", "DOMESTIC", "PP", "CUST", "Sample Customer", "14MM SAMPLE ROPE 100 METER", 26, 236.63, "KGS", 0.63, 146.53, "5.0%", 7.33, 153.83, 0.03, 153.83, " (153.778)", "", "", ""]];
+    var wb = XLSX.utils.book_new();
+    var ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = XL_TEMPLATE_HEADERS.map(function () { return { wch: 16 }; });
+    XLSX.utils.book_append_sheet(wb, ws, "Sales Register");
+    var out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    await downloadBlob(new Blob([out], { type: "application/octet-stream" }), "PPC_Sales_Register_Template.xlsx");
+  }
+
+  async function handleExcelFile(file) {
+    PPC.keepFiles([file], "sales");
+    var st = document.getElementById("xlStatus");
+    if (!window.XLSX) { st.innerHTML = '<div class="status-banner error">The Excel reader couldn’t load — check your internet connection and reopen the page.</div>'; return; }
+    st.innerHTML = '<div class="status-banner info"><span class="spinner"></span>Reading ' + esc(file.name) + '…</div>';
+    try {
+      var buf = await file.arrayBuffer();
+      var wb = XLSX.read(buf, { type: "array" });
+      var best = null;
+      wb.SheetNames.forEach(function (n) {
+        var aoa = XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: null });
+        var res = parseRegisterRows(aoa);
+        if (!res.error && (!best || res.rows > best.rows)) best = res;
+        if (res.error && !best) best = best || null;
+      });
+      if (!best || !best.invoices.length) { st.innerHTML = '<div class="status-banner error">No invoice rows found. Make sure the first rows contain headers like Invoice #, Date, Customer Name, Description, Quantity, Unit Price — or download the blank template.</div>'; return; }
+      xlState = { invoices: best.invoices, sel: {}, file: file.name, from: "", to: "" };
+      var ds = best.invoices.map(function (inv) { return inv.date; }).filter(Boolean).sort();
+      if (ds.length) { xlState.from = ds[0]; xlState.to = ds[ds.length - 1]; }
+      xlResetSel();
+      renderExcelPreview();
+    } catch (e) {
+      st.innerHTML = '<div class="status-banner error">Couldn’t read that file. Save it as .xlsx or .csv and try again.</div>';
+    }
+  }
+
+  function xlInRange(inv) {
+    if (!inv.date) return true; // shown so the missing-date error is visible
+    if (xlState.from && inv.date < xlState.from) return false;
+    if (xlState.to && inv.date > xlState.to) return false;
+    return true;
+  }
+  function xlResetSel() {
+    xlState.sel = {};
+    xlState.invoices.forEach(function (inv) { xlState.sel[inv.no] = !inv.error && xlInRange(inv) && !invoices[inv.no]; });
+  }
+
+  function renderExcelPreview() {
+    var list = xlState.invoices.filter(xlInRange);
+    var rowsHtml = list.map(function (inv) {
+      var exists = !!invoices[inv.no];
+      var status = inv.error ? '<span class="xl-warn">' + esc(inv.error) + '</span>'
+        : exists ? '<span class="chip">Already on dashboard</span>' : '<span class="chip new" style="margin:0;">New</span>';
+      var warn = inv.warnings.length ? '<div class="xl-warn">' + esc(inv.warnings.join("; ")) + '</div>' : "";
+      return '<tr>' +
+        '<td><input type="checkbox" class="xl-chk" data-no="' + esc(inv.no) + '"' + (xlState.sel[inv.no] ? " checked" : "") + (inv.error ? " disabled" : "") + '></td>' +
+        '<td><strong>' + esc(inv.no) + '</strong></td><td>' + esc(inv.date || "–") + '</td>' +
+        '<td>' + esc(inv.customer || "–") + warn + '</td>' +
+        '<td><span class="chip ' + inv.segment + '">' + (inv.segment === "export" ? "Export" : "Domestic") + '</span></td>' +
+        '<td class="num">' + inv.items.length + '</td>' +
+        '<td class="num">' + (inv.qty != null ? fmt(inv.qty, 2) : "–") + '</td>' +
+        '<td class="num">' + fmt(inv.total, 3) + '</td><td>' + status + '</td></tr>';
+    }).join("");
+    document.getElementById("xlStatus").innerHTML =
+      '<div class="line-item-grid" style="margin-bottom:0.7rem;"><div class="field"><label>From date</label><input type="date" id="xlFrom" value="' + esc(xlState.from) + '"></div><div class="field"><label>To date</label><input type="date" id="xlTo" value="' + esc(xlState.to) + '"></div></div>' +
+      '<div class="status-banner info" id="xlSummary"></div>' +
+      '<div class="xl-table-wrap"><table><thead><tr><th></th><th>Invoice</th><th>Date</th><th>Customer</th><th>Market</th><th class="num">Lines</th><th class="num">Kg</th><th class="num">Total (OMR)</th><th>Status</th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div>' +
+      '<div class="row-actions"><button class="btn-primary" id="xlImportBtn">Import selected</button><button class="btn-ghost" id="xlAllBtn">Select all valid</button><button class="btn-ghost" id="xlNoneBtn">Clear selection</button></div>';
+    function refresh() {
+      var n = 0, q = 0, v = 0, ow = 0;
+      list.forEach(function (inv) { if (xlState.sel[inv.no]) { n++; q += inv.qty || 0; v += inv.total; if (invoices[inv.no]) ow++; } });
+      document.getElementById("xlSummary").innerHTML = esc(xlState.file) + ' — ' + list.length + ' of ' + xlState.invoices.length + ' invoice(s) fall inside the From–To dates. Selected: ' + n + ' · ' + fmt(q, 2) + ' kg · ' + fmt(v, 3) + ' OMR' + (ow ? ' · ' + ow + ' will overwrite existing' : '');
+      document.getElementById("xlImportBtn").disabled = !n;
+    }
+    Array.prototype.forEach.call(document.querySelectorAll(".xl-chk"), function (c) {
+      c.addEventListener("change", function () { xlState.sel[c.getAttribute("data-no")] = c.checked; refresh(); });
+    });
+    document.getElementById("xlAllBtn").addEventListener("click", function () {
+      list.forEach(function (inv) { xlState.sel[inv.no] = !inv.error; });
+      Array.prototype.forEach.call(document.querySelectorAll(".xl-chk"), function (c) { c.checked = !!xlState.sel[c.getAttribute("data-no")]; });
+      refresh();
+    });
+    document.getElementById("xlNoneBtn").addEventListener("click", function () {
+      list.forEach(function (inv) { xlState.sel[inv.no] = false; });
+      Array.prototype.forEach.call(document.querySelectorAll(".xl-chk"), function (c) { c.checked = false; });
+      refresh();
+    });
+    document.getElementById("xlImportBtn").addEventListener("click", importExcelInvoices);
+    function dateChanged() {
+      xlState.from = document.getElementById("xlFrom").value;
+      xlState.to = document.getElementById("xlTo").value;
+      xlResetSel();
+      renderExcelPreview();
+    }
+    document.getElementById("xlFrom").addEventListener("change", dateChanged);
+    document.getElementById("xlTo").addEventListener("change", dateChanged);
+    refresh();
+  }
+
+  // Document ids may only contain letters, digits and _ - . ~ : @ + ; anything else (spaces, "/", "#") is replaced.
+  function xlLooseMatch(name, canon) {
+    var stop = { al: 1, mr: 1, ms: 1, m: 1, s: 1, llc: 1, spc: 1, of: 1, the: 1, co: 1, est: 1 };
+    var toks = custKey(name).split(" ").filter(function (t) { return t && !stop[t]; });
+    if (!toks.length) return null;
+    var hits = Object.keys(canon).filter(function (k) {
+      var kt = k.split(" ");
+      return toks.every(function (t) { return kt.indexOf(t) !== -1; });
+    });
+    return hits.length === 1 ? canon[hits[0]] : null;
+  }
+  function xlSafeId(no) { return String(no).trim().replace(/[^A-Za-z0-9_\-.~:@+]/g, "_").slice(0, 150) || "inv"; }
+  function xlClean(o) { return JSON.parse(JSON.stringify(o, function (k, v) { return (typeof v === "number" && !isFinite(v)) ? null : v; })); }
+  async function xlSet(coll, id, data) {
+    var clean = xlClean(data), lastErr;
+    for (var a = 0; a < 4; a++) {
+      try { await db.collection(coll).doc(id).set(clean); return; }
+      catch (e) { lastErr = e; await new Promise(function (r) { setTimeout(r, 400 * (a + 1)); }); }
+    }
+    throw lastErr;
+  }
+
+  async function importExcelInvoices() {
+    var btn = document.getElementById("xlImportBtn"), st = document.getElementById("xlSummary");
+    var picked = xlState.invoices.filter(function (inv) { return xlState.sel[inv.no] && !inv.error && xlInRange(inv); });
+    if (!picked.length) return;
+    if (!db) { st.className = "status-banner error"; st.textContent = "Live sync unavailable — can’t save in this view."; return; }
+    // Use the customer spelling already on the dashboard so one customer is never split in two.
+    var canon = {};
+    Object.keys(invoices).forEach(function (k) { var c = invoices[k].customer; if (c && !canon[custKey(c)]) canon[custKey(c)] = c; });
+    btn.disabled = true; btn.textContent = "Saving…";
+    var now = new Date().toISOString(), done = 0;
+    try {
+      for (var i = 0; i < picked.length; i++) {
+        var inv = picked[i];
+        var cust = canon[custKey(inv.customer)] || xlLooseMatch(inv.customer, canon) || inv.customer;
+        var doc = { no: inv.no, date: inv.date, customer: cust, segment: inv.segment, items: inv.items, roundOff: inv.roundOff, rolls: inv.rolls, qty: inv.qty, total: inv.total, source: "excel", addedAt: now };
+        await xlSet("invoices", xlSafeId(inv.no), doc);
+        // matching rows for the Line items register (fixed ids, so re-importing replaces rather than duplicates)
+        var writes = inv.items.map(function (it, idx) {
+          var meta = inv._lines[idx] || {};
+          var rate = meta.rate != null ? meta.rate : (it.taxable ? Math.round((it.vat || 0) / it.taxable * 100) / 100 : 0.05);
+          var ro = idx === 0 ? (inv.roundOff || 0) : 0;
+          var row = { id: "xl_" + xlSafeId(inv.no) + "_" + idx, invoiceNo: inv.no, date: inv.date, segment: inv.segment === "export" ? "EXPORT" : "DOMESTIC",
+            resin: meta.resin || "", customerId: meta.customerId || "", customerName: cust, description: it.desc,
+            coils: it.rolls != null ? it.rolls : "", qty: it.qty != null ? it.qty : "", unit: meta.unit || "KGS", unitPrice: it.price != null ? it.price : "",
+            taxable: it.taxable != null ? it.taxable : "", taxRate: String(rate), taxDue: it.vat != null ? it.vat : 0, gross: it.total,
+            invoiceValue: xlR3((Number(it.total) || 0) + ro), receipt: meta.receipt != null ? meta.receipt : "", deposited: meta.deposited || "", roundOff: String(ro) };
+          return row;
+        });
+        for (var k = 0; k < writes.length; k++) await xlSet("lineItems", writes[k].id, writes[k]);
+        done++;
+        st.className = "status-banner info"; st.innerHTML = '<span class="spinner"></span>Saved ' + done + ' of ' + picked.length + '…';
+      }
+      document.getElementById("xlStatus").innerHTML = '<div class="status-banner info">Imported ' + done + ' invoice(s). The charts and tables have updated.</div>' +
+        '<div class="row-actions"><button class="btn-primary" id="xlDoneBtn">Done</button><button class="btn-ghost" id="xlAnotherBtn">Upload another file</button></div>';
+      document.getElementById("xlDoneBtn").addEventListener("click", closeModal);
+      document.getElementById("xlAnotherBtn").addEventListener("click", openExcelModal);
+    } catch (e) {
+      st.className = "status-banner error";
+      var why = (e && (e.code || e.message)) ? String(e.code || e.message).slice(0, 140) : "unknown error";
+      st.textContent = "Saved " + done + " of " + picked.length + ". Stopped at " + (picked[done] ? picked[done].no : "?") + " (" + why + "). Click Import selected to retry — saved invoices are simply replaced.";
+      btn.disabled = false; btn.textContent = "Import selected";
+    }
+  }
+
+  // ---------- Edit an invoice (every column) ----------
+  var edState = null;
+  function edFind(no) {
+    if (invoices[no]) return { key: no, inv: invoices[no] };
+    var k = Object.keys(invoices).filter(function (x) { return invoices[x].no === no; })[0];
+    return k ? { key: k, inv: invoices[k] } : null;
+  }
+  function edRowHtml(l) {
+    function n(v, step, cls, w) { return '<td><input class="' + cls + '" type="number" step="' + step + '" value="' + (v == null || v === "" ? "" : v) + '" style="width:' + w + 'px;"></td>'; }
+    function t(v, cls, w) { return '<td><input class="' + cls + '" type="text" value="' + esc(v == null ? "" : v) + '" style="width:' + w + 'px;"></td>'; }
+    return '<tr>' + t(l.desc, "ed-desc", 250) + t(l.resin, "ed-resin", 48) + t(l.customerId, "ed-cid", 62) +
+      n(l.coils, "1", "ed-coils", 62) + n(l.qty, "any", "ed-qty", 84) + t(l.unit, "ed-unit", 52) + n(l.price, "any", "ed-price", 74) +
+      n(l.rate == null ? "" : Math.round(l.rate * 10000) / 100, "any", "ed-rate", 56) + n(l.taxable, "any", "ed-taxable", 84) +
+      n(l.vat, "any", "ed-vat", 74) + n(l.gross, "any", "ed-gross", 88) +
+      '<td><button class="btn-ghost ed-rm" style="padding:0.2rem 0.55rem;color:var(--danger);">&times;</button></td></tr>';
+  }
+  function edBlankLine() { return { desc: "", resin: "", customerId: "", coils: null, qty: null, unit: "KGS", price: null, rate: 0.05, taxable: null, vat: null, gross: null }; }
+
+  function openEditInvoice(no) {
+    var f = edFind(no); if (!f) return;
+    var inv = f.inv;
+    var rows = window.__liItemsFor ? window.__liItemsFor(inv.no) : [];
+    var same = rows.length === (inv.items || []).length;
+    var lines = (inv.items || []).map(function (it, i) {
+      var m = same ? rows[i] : {};
+      var rate = it.taxable ? Math.round((Number(it.vat) || 0) / it.taxable * 1000) / 1000 : ((inv.segment === "export") ? 0 : 0.05);
+      return { desc: it.desc, resin: it.resin || m.resin || "", customerId: m.customerId || "", coils: it.rolls, qty: it.qty, unit: m.unit || "KGS", price: it.price, rate: rate, taxable: it.taxable, vat: it.vat, gross: it.total };
+    });
+    if (!lines.length) lines = [edBlankLine()];
+    edState = { key: f.key, origNo: inv.no, source: inv.source };
+    document.getElementById("modalBody").style.maxWidth = "1120px";
+    openModal(
+      '<h3>Edit invoice ' + esc(inv.no) + '</h3>' +
+      '<p class="hint" style="margin-top:-0.5rem;">Correct any column. Changing quantity, unit price or tax % recalculates that line; you can still overwrite the taxable, tax and gross figures by hand.</p>' +
+      '<div id="edErr"></div>' +
+      '<div class="line-item-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); margin-bottom:0.8rem;">' +
+      '<div class="field"><label>Invoice #</label><input id="ed_no" value="' + esc(inv.no) + '"></div>' +
+      '<div class="field"><label>Date</label><input id="ed_date" type="date" value="' + esc(inv.date || "") + '"></div>' +
+      '<div class="field"><label>Market</label><select id="ed_seg" style="width:100%;padding:0.55rem;"><option value="domestic"' + (inv.segment !== "export" ? " selected" : "") + '>Domestic</option><option value="export"' + (inv.segment === "export" ? " selected" : "") + '>Export</option></select></div>' +
+      '<div class="field"><label>Round off (OMR)</label><input id="ed_ro" type="number" step="any" value="' + (inv.roundOff != null ? inv.roundOff : "") + '"></div>' +
+      '<div class="field" style="grid-column:1/-1;"><label>Customer name</label><input id="ed_cust" value="' + esc((inv.customer || "").replace(/\n/g, " ")) + '"></div></div>' +
+      '<div class="table-scroll"><table id="edTable" style="min-width:1000px;"><thead><tr><th>Description</th><th>Resin</th><th>Cust ID</th><th>Coils</th><th>Qty (kg)</th><th>Unit</th><th>Unit price</th><th>Tax %</th><th>Taxable</th><th>Tax due</th><th>Gross</th><th></th></tr></thead>' +
+      '<tbody id="edBody">' + lines.map(edRowHtml).join("") + '</tbody></table></div>' +
+      '<div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:center;margin:0.7rem 0;"><button class="btn-ghost" id="edAddLine">+ Add line</button><strong id="edTotals" style="font-size:0.9rem;"></strong></div>' +
+      '<div class="row-actions"><button class="btn-primary" id="edSave">Save changes</button><button class="btn-ghost" id="edCancel">Cancel</button><button class="btn-ghost" id="edDelete" style="margin-left:auto;color:var(--danger);border-color:var(--danger);">Delete invoice</button></div>'
+    );
+    var body = document.getElementById("edBody");
+    function num(tr, c) { var v = parseFloat(tr.querySelector(c).value); return isNaN(v) ? null : v; }
+    function totals() {
+      var q = 0, g = 0;
+      Array.prototype.forEach.call(body.querySelectorAll("tr"), function (tr) { q += num(tr, ".ed-qty") || 0; g += num(tr, ".ed-gross") || 0; });
+      g += parseFloat(document.getElementById("ed_ro").value) || 0;
+      document.getElementById("edTotals").textContent = "Qty " + fmt(q, 3).replace("&ndash;", "0") + " kg  ·  Invoice total " + fmt(g, 3).replace("&ndash;", "0") + " OMR";
+    }
+    function setv(tr, c, v) { tr.querySelector(c).value = v == null ? "" : v; }
+    body.addEventListener("input", function (e) {
+      var tr = e.target.closest("tr"), c = e.target.className;
+      if (/ed-(qty|price|rate)/.test(c)) {
+        var q = num(tr, ".ed-qty"), p = num(tr, ".ed-price"), r = (num(tr, ".ed-rate") || 0) / 100;
+        if (q != null && p != null) {
+          var tx = xlR3(q * p), vt = xlR3(tx * r);
+          setv(tr, ".ed-taxable", tx); setv(tr, ".ed-vat", vt); setv(tr, ".ed-gross", xlR3(tx + vt));
+        }
+      } else if (/ed-taxable/.test(c)) {
+        var t2 = num(tr, ".ed-taxable"), r2 = (num(tr, ".ed-rate") || 0) / 100;
+        if (t2 != null) { var v2 = xlR3(t2 * r2); setv(tr, ".ed-vat", v2); setv(tr, ".ed-gross", xlR3(t2 + v2)); }
+      } else if (/ed-vat/.test(c)) {
+        var t3 = num(tr, ".ed-taxable"), v3 = num(tr, ".ed-vat");
+        if (t3 != null && v3 != null) setv(tr, ".ed-gross", xlR3(t3 + v3));
+      }
+      totals();
+    });
+    body.addEventListener("click", function (e) {
+      var b = e.target.closest(".ed-rm"); if (!b) return;
+      if (body.querySelectorAll("tr").length > 1) b.closest("tr").remove();
+      else Array.prototype.forEach.call(b.closest("tr").querySelectorAll("input"), function (i) { i.value = ""; });
+      totals();
+    });
+    document.getElementById("ed_ro").addEventListener("input", totals);
+    document.getElementById("edAddLine").addEventListener("click", function () {
+      var tmp = document.createElement("tbody"); tmp.innerHTML = edRowHtml(edBlankLine());
+      body.appendChild(tmp.firstChild); totals();
+    });
+    document.getElementById("edCancel").addEventListener("click", closeModal);
+    document.getElementById("edSave").addEventListener("click", saveEditedInvoice);
+    document.getElementById("edDelete").addEventListener("click", deleteEditedInvoice);
+    totals();
+  }
+
+  async function deleteEditedInvoice() {
+    if (!confirm("Delete invoice " + edState.origNo + " and its line items? This can't be undone.")) return;
+    try {
+      var ids = (window.__liItemsFor ? window.__liItemsFor(edState.origNo) : []).map(function (r) { return r.id; });
+      await db.collection("invoices").doc(edState.key).delete();
+      for (var i = 0; i < ids.length; i++) await db.collection("lineItems").doc(ids[i]).delete();
+      closeModal();
+    } catch (e) {
+      document.getElementById("edErr").innerHTML = '<div class="status-banner error">Could not delete: ' + esc((e && (e.code || e.message)) || "error") + '</div>';
+    }
+  }
+
+  async function saveEditedInvoice() {
+    var errBox = document.getElementById("edErr");
+    var no = document.getElementById("ed_no").value.trim();
+    var date = document.getElementById("ed_date").value.trim();
+    var cust = cleanName(document.getElementById("ed_cust").value);
+    var seg = document.getElementById("ed_seg").value === "export" ? "export" : "domestic";
+    var ro = numOrNull(document.getElementById("ed_ro").value);
+    if (!no || !date || !cust) { errBox.innerHTML = '<div class="status-banner error">Invoice number, date and customer name are required.</div>'; return; }
+    var lines = [];
+    Array.prototype.forEach.call(document.querySelectorAll("#edBody tr"), function (tr) {
+      function v(c) { return tr.querySelector(c).value; }
+      var gross = numOrNull(v(".ed-gross")), desc = v(".ed-desc").trim();
+      if (!desc && gross === null && numOrNull(v(".ed-qty")) === null) return;
+      var rate = numOrNull(v(".ed-rate"));
+      lines.push({ desc: desc || "Item", resin: v(".ed-resin").trim(), cid: v(".ed-cid").trim(), unit: v(".ed-unit").trim() || "KGS",
+        rolls: numOrNull(v(".ed-coils")), qty: numOrNull(v(".ed-qty")), price: numOrNull(v(".ed-price")),
+        vat: numOrNull(v(".ed-vat")), taxable: numOrNull(v(".ed-taxable")), total: gross === null ? 0 : gross, rate: rate === null ? 0 : rate / 100 });
+    });
+    if (!lines.length) { errBox.innerHTML = '<div class="status-banner error">Add at least one line.</div>'; return; }
+    var key = xlSafeId(no);
+    if (key !== edState.key && invoices[key]) { errBox.innerHTML = '<div class="status-banner error">Another invoice already uses the number ' + esc(no) + '.</div>'; return; }
+    var items = lines.map(function (l) { return { desc: l.desc, rolls: l.rolls, qty: l.qty, price: l.price, vat: l.vat, taxable: l.taxable, total: l.total, resin: (l.resin || "").trim() }; });
+    var total = xlR3(items.reduce(function (s, it) { return s + (Number(it.total) || 0); }, 0) + (ro || 0));
+    var qty = items.every(function (it) { return it.qty !== null; }) ? xlR3(items.reduce(function (s, it) { return s + it.qty; }, 0)) : null;
+    var rolls = items.every(function (it) { return it.rolls !== null; }) ? items.reduce(function (s, it) { return s + it.rolls; }, 0) : null;
+    var doc = { no: no, date: date, customer: cust, segment: seg, items: items, roundOff: ro, rolls: rolls, qty: qty, total: total, source: edState.source || "edit", editedAt: new Date().toISOString() };
+    var btn = document.getElementById("edSave"); btn.disabled = true; btn.textContent = "Saving…";
+    try {
+      var oldIds = (window.__liItemsFor ? window.__liItemsFor(edState.origNo) : []).map(function (r) { return r.id; });
+      await xlSet("invoices", key, doc);
+      if (key !== edState.key) await db.collection("invoices").doc(edState.key).delete();
+      for (var i = 0; i < oldIds.length; i++) await db.collection("lineItems").doc(oldIds[i]).delete();
+      for (var j = 0; j < lines.length; j++) {
+        var l = lines[j], r0 = j === 0 ? (ro || 0) : 0;
+        await xlSet("lineItems", "xl_" + key + "_" + j, { id: "xl_" + key + "_" + j, invoiceNo: no, date: date, segment: seg === "export" ? "EXPORT" : "DOMESTIC",
+          resin: l.resin, customerId: l.cid, customerName: cust, description: l.desc, coils: l.rolls != null ? l.rolls : "", qty: l.qty != null ? l.qty : "",
+          unit: l.unit, unitPrice: l.price != null ? l.price : "", taxable: l.taxable != null ? l.taxable : "", taxRate: String(l.rate),
+          taxDue: l.vat != null ? l.vat : 0, gross: l.total, invoiceValue: xlR3(l.total + r0), receipt: "", deposited: "", roundOff: String(r0) });
+      }
+      closeModal();
+    } catch (e) {
+      errBox.innerHTML = '<div class="status-banner error">Could not save: ' + esc((e && (e.code || e.message)) || "error") + '. Try again.</div>';
+      btn.disabled = false; btn.textContent = "Save changes";
+    }
+  }
+
+  // ---------- Month filter ----------
+  document.getElementById("monthFilter").addEventListener("change", function (e) {
+    monthFilterValue = e.target.value;
+    renderTable(Object.keys(invoices).map(function (k) { return invoices[k]; }));
+  });
+
+  // ---------- Export to Excel ----------
+  // CSV fallback (no library needed) for when the Excel-writer script can't reach the
+  // network — CSV opens fine in Excel too, just without multiple sheets or number formatting.
+  function aoaToCsv(aoa) {
+    return aoa.map(function (row) {
+      return row.map(function (cell) {
+        var s = cell == null ? "" : String(cell);
+        return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+      }).join(",");
+    }).join("\r\n");
+  }
+  async function downloadBlob(blob, filename) {
+    if (downloadsCap) {
+      try { await downloadsCap.save({ filename: filename, data: blob }); return; } catch (e) { /* fall through */ }
+    }
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // Every saved invoice (uploaded, typed or edited) as rows in the sales-register layout,
+  // so the file can be kept in your own system and uploaded again later.
+  function registerAoa(list) {
+    function ddmmyyyy(d) { return d && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d.slice(8, 10) + "/" + d.slice(5, 7) + "/" + d.slice(0, 4) : (d || ""); }
+    var aoa = [XL_TEMPLATE_HEADERS];
+    list.forEach(function (inv) {
+      var meta = window.__liItemsFor ? window.__liItemsFor(inv.no) : [];
+      var items = inv.items || [];
+      var same = meta.length === items.length;
+      items.forEach(function (it, i) {
+        var m = same ? meta[i] : {};
+        var rate = it.taxable ? Math.round((Number(it.vat) || 0) / it.taxable * 1000) / 1000 : (inv.segment === "export" ? 0 : (m.taxRate !== undefined && m.taxRate !== "" ? parseFloat(m.taxRate) : 0.05));
+        aoa.push([inv.no, ddmmyyyy(inv.date), (inv.segment === "export" ? "EXPORT" : "DOMESTIC"), m.resin || "", m.customerId || "",
+          String(inv.customer || "").replace(/\s*\n\s*/g, ", "), it.desc || "",
+          it.rolls != null ? it.rolls : "", it.qty != null ? it.qty : "", m.unit || "KGS", it.price != null ? it.price : "",
+          it.taxable != null ? it.taxable : "", isNaN(rate) ? "" : rate, it.vat != null ? it.vat : "", it.total != null ? it.total : "",
+          i === 0 ? inv.total : "", m.receipt !== undefined && m.receipt !== "" ? m.receipt : "", m.deposited || "", i === 0 && inv.roundOff != null ? inv.roundOff : ""]);
+      });
+    });
+    return aoa;
+  }
+
+  document.getElementById("exportBtn").addEventListener("click", async function () {
+    var list = Object.keys(invoices).map(function (k) { return invoices[k]; });
+    list.sort(function (a, b) { return (a.date || "").localeCompare(b.date || ""); });
+
+    var logRows = [["Invoice #", "Date", "Customer", "Description", "Rolls", "Qty (Kg)", "Unit Price (OMR)", "VAT (OMR)", "Line Total (OMR)", "Round Off (OMR)", "Invoice Total (OMR)"]];
+    list.forEach(function (inv) {
+      (inv.items || []).forEach(function (it, i) {
+        logRows.push([
+          inv.no, inv.date, inv.customer, it.desc,
+          it.rolls != null ? it.rolls : "", it.qty != null ? it.qty : "", it.price != null ? it.price : "", it.vat != null ? it.vat : "",
+          it.total != null ? it.total : "",
+          i === (inv.items.length - 1) ? (inv.roundOff != null ? inv.roundOff : "") : "",
+          i === (inv.items.length - 1) ? inv.total : ""
+        ]);
+      });
+    });
+
+    var byMonth = {};
+    list.forEach(function (inv) { var mk = monthKey(inv.date); byMonth[mk] = (byMonth[mk] || 0) + (Number(inv.total) || 0); });
+    var monthRows = [["Month", "Total Sales (OMR)"]];
+    Object.keys(byMonth).sort().forEach(function (k) { monthRows.push([monthLabel(k), Math.round(byMonth[k] * 1000) / 1000]); });
+    monthRows.push(["Grand Total", Math.round(list.reduce(function (s, inv) { return s + (Number(inv.total) || 0); }, 0) * 1000) / 1000]);
+
+    var stamp = new Date().toISOString().slice(0, 10);
+    if (window.XLSX) {
+      var wb = XLSX.utils.book_new();
+      var regWs = XLSX.utils.aoa_to_sheet(registerAoa(list));
+      regWs["!cols"] = XL_TEMPLATE_HEADERS.map(function (h, i) { return { wch: i === 6 || i === 5 ? 34 : 15 }; });
+      XLSX.utils.book_append_sheet(wb, regWs, "Sales Register");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(monthRows), "Month Summary");
+      var wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      var blob = new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      await downloadBlob(blob, "PPC_Sales_Register_" + stamp + ".xlsx");
+    } else {
+      var csv = aoaToCsv(registerAoa(list));
+      await downloadBlob(new Blob([csv], { type: "text/csv" }), "PPC_Sales_Register_" + stamp + ".csv");
+    }
+  });
+
+  // ---------- Line items (detailed entry, shared) ----------
+  (function () {
+    var LI_COLS = ["invoiceNo","date","segment","resin","customerId","customerName","description","coils","qty","unit","unitPrice","taxable","taxRate","taxDue","gross","invoiceValue","receipt","deposited","roundOff"];
+    var LI_HEADERS = ["Invoice #","Date","SEGMENT","RESIN","Customer ID","Customer Name","Description","No of Coils","Quantity","Unit","Unit Price (OMR)","Taxable Amount","Tax Rate","Tax Due","Gross Value (OMR)","Invoice Value (OMR)","Receipt (OMR)","Deposited in Bank","ROUND OFF"];
+    var LI_CALC = { taxable: 1, taxDue: 1, gross: 1, invoiceValue: 1 };
+    var liItems = {}; // id -> doc
+
+    function liNum(v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; }
+    function liRound3(n) { return Math.round(n * 1000) / 1000; }
+    function liRecalc(r) {
+      var taxable = liRound3(liNum(r.qty) * liNum(r.unitPrice));
+      var taxDue = liRound3(taxable * liNum(r.taxRate));
+      var gross = liRound3(taxable + taxDue);
+      r.taxable = taxable; r.taxDue = taxDue; r.gross = gross;
+      r.invoiceValue = liRound3(gross + liNum(r.roundOff));
+    }
+    function liBlank() {
+      return { id: "li_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+        invoiceNo: "", date: "", segment: "DOMESTIC", resin: "PP", customerId: "", customerName: "",
+        description: "", coils: "", qty: "", unit: "KGS", unitPrice: "", taxRate: "0.05",
+        receipt: "", deposited: "", roundOff: "0" };
+    }
+    function liWrite(r) {
+      if (!db) return;
+      db.collection("lineItems").doc(r.id).set(r).catch(function () {});
+    }
+    function liRender() {
+      var tbody = document.getElementById("liTableBody");
+      var list = Object.keys(liItems).map(function (k) { return liItems[k]; })
+        .sort(function (a, b) { return (a.date || "").localeCompare(b.date || ""); });
+      if (!list.length) {
+        tbody.innerHTML = '<tr><td colspan="20" class="muted">No line items yet &mdash; add a row or upload an invoice.</td></tr>';
+      } else {
+        tbody.innerHTML = list.map(function (r) {
+          return '<tr data-id="' + r.id + '">' + LI_COLS.map(function (c) {
+            if (LI_CALC[c]) return '<td class="calc"><input readonly data-c="' + c + '" value="' + (r[c] != null ? r[c] : "") + '"></td>';
+            if (c === "segment") return '<td><select data-c="segment"><option' + (r.segment === "DOMESTIC" ? " selected" : "") + '>DOMESTIC</option><option' + (r.segment === "EXPORT" ? " selected" : "") + '>EXPORT</option></select></td>';
+            if (c === "date") return '<td><input type="date" data-c="date" value="' + esc(r.date) + '"></td>';
+            var type = (["qty", "coils", "unitPrice", "taxRate", "receipt", "deposited", "roundOff"].indexOf(c) !== -1) ? "number" : "text";
+            var step = (c === "taxRate") ? "0.01" : "any";
+            return '<td><input type="' + type + '" ' + (type === "number" ? 'step="' + step + '"' : "") + ' data-c="' + c + '" value="' + esc(r[c]) + '"></td>';
+          }).join("") + '<td class="rm"><button data-rm="' + r.id + '">&times;</button></td></tr>';
+        }).join("");
+      }
+      if (PPC.mode === "viewer") Array.prototype.forEach.call(tbody.querySelectorAll("input,select"), function (el) { el.disabled = true; });
+      var totQty = liRound3(list.reduce(function (s, r) { return s + liNum(r.qty); }, 0));
+      var totInv = liRound3(list.reduce(function (s, r) { return s + liNum(r.invoiceValue); }, 0));
+      document.getElementById("liTotals").textContent = list.length ?
+        (list.length + " row(s) \u00b7 Total qty: " + totQty + " \u00b7 Total invoice value: " + totInv + " OMR") : "";
+    }
+
+    document.getElementById("liTableBody").addEventListener("input", function (e) {
+      var tr = e.target.closest("tr"); if (!tr) return;
+      var r = liItems[tr.getAttribute("data-id")]; if (!r) return;
+      var c = e.target.getAttribute("data-c");
+      r[c] = e.target.value;
+      if (["qty", "unitPrice", "taxRate", "roundOff"].indexOf(c) !== -1) {
+        liRecalc(r);
+        LI_COLS.forEach(function (cc) { if (LI_CALC[cc]) { var inp = tr.querySelector('input[data-c="' + cc + '"]'); if (inp) inp.value = r[cc]; } });
+      }
+      liWrite(r);
+    });
+    document.getElementById("liTableBody").addEventListener("click", function (e) {
+      var btn = e.target.closest("button[data-rm]"); if (!btn) return;
+      var id = btn.getAttribute("data-rm");
+      delete liItems[id];
+      liRender();
+      if (db) db.collection("lineItems").doc(id).delete().catch(function () {});
+    });
+    document.getElementById("liAddBtn").addEventListener("click", function () {
+      var r = liBlank(); liItems[r.id] = r; liRender(); liWrite(r);
+    });
+    document.getElementById("liClearBtn").addEventListener("click", function () {
+      var ids = Object.keys(liItems);
+      if (!ids.length) return;
+      if (!confirm("Remove all " + ids.length + " line item row(s)? This can't be undone.")) return;
+      ids.forEach(function (id) { if (db) db.collection("lineItems").doc(id).delete().catch(function () {}); });
+      liItems = {}; liRender();
+    });
+
+    var liOverlay = document.getElementById("liUploadOverlay");
+    document.getElementById("liUploadBtn").addEventListener("click", function () {
+      document.getElementById("liUploadStatus").textContent = "";
+      document.getElementById("liFileInput").value = "";
+      liOverlay.style.display = "flex";
+    });
+    document.getElementById("liCancelUpload").addEventListener("click", function () { liOverlay.style.display = "none"; });
+
+    document.getElementById("liFileInput").addEventListener("change", async function (e) {
+      var file = e.target.files[0]; if (!file) return;
+      var statusBox = document.getElementById("liUploadStatus");
+      statusBox.textContent = "Reading the invoice\u2026 this can take up to a minute.";
+      if (!sampleCap) { statusBox.textContent = "Invoice reading isn't available in this view."; return; }
+      var prompt = "You are reading a sales invoice from an Omani rope manufacturer (Polymer Products Co LLC) from a photo, screenshot or PDF pages. " +
+        "Extract every line item. Reply with ONLY a JSON object: {\"invoiceNo\": string, \"date\": \"YYYY-MM-DD\", \"segment\": \"DOMESTIC\"|\"EXPORT\", " +
+        "\"lines\": [{\"resin\": \"PE\"|\"PP\"|string, \"customerId\": string, \"customerName\": string, \"description\": string, \"coils\": number, " +
+        "\"qty\": number, \"unit\": string, \"unitPrice\": number, \"taxRate\": number}], \"receipt\": number, \"deposited\": string, \"roundOff\": number}. " +
+        "Use the invoice header for invoiceNo/date/customer if lines don't repeat it. If VAT/tax isn't shown, use 0 for taxRate. Use null for anything not present.";
+      try {
+        var lcaps = await sampleCap.limits().catch(function () { return null; });
+        var limgs = await fileToImages(file, lcaps && lcaps.images ? lcaps.images.maxCount : 1);
+        var data = await sampleCap.json(prompt, { images: limgs, modelTier: "default", cache: false });
+        var lines = (data && data.lines) || [];
+        if (!lines.length) { statusBox.textContent = "Couldn't find any line items on that image \u2014 try a clearer photo, or add rows manually."; return; }
+        lines.forEach(function (ln) {
+          var r = liBlank();
+          r.invoiceNo = data.invoiceNo || ""; r.date = data.date || "";
+          r.segment = (data.segment === "EXPORT") ? "EXPORT" : "DOMESTIC";
+          r.resin = ln.resin || ""; r.customerId = ln.customerId || ""; r.customerName = ln.customerName || "";
+          r.description = ln.description || ""; r.coils = ln.coils != null ? ln.coils : "";
+          r.qty = ln.qty != null ? ln.qty : ""; r.unit = ln.unit || "KGS";
+          r.unitPrice = ln.unitPrice != null ? ln.unitPrice : ""; r.taxRate = ln.taxRate != null ? ln.taxRate : "0.05";
+          r.receipt = data.receipt != null ? data.receipt : ""; r.deposited = data.deposited || "";
+          r.roundOff = data.roundOff != null ? data.roundOff : "0";
+          liRecalc(r);
+          liItems[r.id] = r; liWrite(r);
+        });
+        liRender();
+        statusBox.textContent = "Added " + lines.length + " row(s) \u2014 review and edit them in the table.";
+        setTimeout(function () { liOverlay.style.display = "none"; }, 900);
+      } catch (err) {
+        var msg = "Couldn't read that invoice.";
+        if (err && err.code === "pdf_unavailable") msg = "The PDF reader couldn\u2019t load \u2014 check your connection, or upload a photo instead.";
+        if (err && err.code === "not_granted") msg = "Reading invoices needs your permission \u2014 try again and accept the prompt.";
+        statusBox.textContent = msg;
+      }
+    });
+
+    document.getElementById("liExportBtn").addEventListener("click", function () {
+      var list = Object.keys(liItems).map(function (k) { return liItems[k]; })
+        .sort(function (a, b) { return (a.date || "").localeCompare(b.date || ""); });
+      if (!list.length) { alert("No line items to export yet."); return; }
+      var aoa = [LI_HEADERS];
+      var numCols = ["qty", "coils", "unitPrice", "taxable", "taxRate", "taxDue", "gross", "invoiceValue", "receipt", "roundOff"];
+      list.forEach(function (r) { aoa.push(LI_COLS.map(function (c) { return numCols.indexOf(c) !== -1 ? liNum(r[c]) : (r[c] || ""); })); });
+      var stamp = new Date().toISOString().slice(0, 10);
+      if (window.XLSX) {
+        var ws = XLSX.utils.aoa_to_sheet(aoa);
+        ws["!cols"] = LI_HEADERS.map(function () { return { wch: 14 }; });
+        var wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Line Items");
+        var wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+        var blob = new Blob([wbout], { type: "application/octet-stream" });
+        var filename = "PPC_Line_Items_" + stamp + ".xlsx";
+        if (downloadsCap) { downloadsCap.save({ filename: filename, data: blob }).catch(function () { liFallbackDownload(blob, filename); }); return; }
+        liFallbackDownload(blob, filename);
+      } else {
+        var csv = aoa.map(function (row) {
+          return row.map(function (cell) {
+            var s = cell == null ? "" : String(cell);
+            return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+          }).join(",");
+        }).join("\r\n");
+        var csvBlob = new Blob([csv], { type: "text/csv" });
+        var csvName = "PPC_Line_Items_" + stamp + ".csv";
+        if (downloadsCap) { downloadsCap.save({ filename: csvName, data: csvBlob }).catch(function () { liFallbackDownload(csvBlob, csvName); }); return; }
+        liFallbackDownload(csvBlob, csvName);
+      }
+    });
+    function liFallbackDownload(blob, filename) {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function liSubscribe() {
+      if (!db) { document.getElementById("liTableBody").innerHTML = '<tr><td colspan="20" class="muted">Live sync unavailable \u2014 line items can\u2019t be saved in this view.</td></tr>'; return; }
+      db.collection("lineItems").onSnapshot(function (snap) {
+        liItems = {};
+        snap.docs.forEach(function (d) { var data = d.data(); if (data) liItems[d.id] = data; });
+        liRender();
+        if (window.__reRender) window.__reRender();
+      }, function () {});
+    }
+
+    window.__liItemsFor = function (no) {
+      return Object.keys(liItems).map(function (k) { return liItems[k]; })
+        .filter(function (r) { return String(r.invoiceNo || "").trim() === String(no || "").trim(); })
+        .sort(function (a, b) { return String(a.id).localeCompare(String(b.id), undefined, { numeric: true }); });
+    };
+    window.__liSubscribe = liSubscribe;
+  })();
+
+  init();
+})();
+</script>
+</body>
+</html>
+
+</body></html>

@@ -1,0 +1,14 @@
+{
+  "name": "ppc-reports",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Rope Production Explorer and PPC Sales Dashboard with published, shared figures",
+  "scripts": {
+    "start": "node server/server.js",
+    "seed": "node tools/seed.js",
+    "test": "node test/run.js"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^11.1.7"
+  }
+}

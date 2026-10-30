@@ -1,0 +1,8 @@
+# Business data and keys must never reach GitHub. The tests hold real figures, so they stay local too.
+data/
+test/
+*.xlsx
+*.xls
+*.xlsm
+node_modules/
+.netlify/

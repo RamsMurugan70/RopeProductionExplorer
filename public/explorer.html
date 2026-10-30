@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Rope Production Explorer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script src="js/ppc.js"></script>
+<script src="js/sales-model.js"></script>
+<style>
+/* Layout: control strip on top, then four stacked chart sections; every chart shares the machine and metric controls. */
+:root{
+  --page:#eef0f2; --surface:#fcfcfb; --ink:#0f1214; --ink2:#4b5259; --ink3:#6f767d; --rule:#dfe2e5; --grid:#e8eaec; --accent:#2a78d6; --accent-ink:#ffffff; --chip:#e4e8ec;
+  --mc1:#2a78d6; --mc2:#eb6834; --mc3:#1baf7a; --mc4:#6250d6; --mc5:#e87ba4; --mc6:#eda100; --mc7:#008300; --mc8:#e34948;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4;
+  --heat:#2a78d6;
+  --font-d:'Archivo','Helvetica Neue',Arial,sans-serif; --font-b:'IBM Plex Sans','Helvetica Neue',Arial,sans-serif; --font-m:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --page:#101112; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --ink3:#9a9a92; --rule:#2e2e2c; --grid:#262625; --accent:#3987e5; --accent-ink:#0b0b0b; --chip:#2a2b2c;
+  --mc1:#3987e5; --mc2:#d95926; --mc3:#199e70; --mc4:#9085e9; --mc5:#d55181; --mc6:#c98500; --mc7:#008300; --mc8:#e66767;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --heat:#3987e5; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --page:#101112; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --ink3:#9a9a92; --rule:#2e2e2c; --grid:#262625; --accent:#3987e5; --accent-ink:#0b0b0b; --chip:#2a2b2c;
+  --mc1:#3987e5; --mc2:#d95926; --mc3:#199e70; --mc4:#9085e9; --mc5:#d55181; --mc6:#c98500; --mc7:#008300; --mc8:#e66767;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --heat:#3987e5; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--page);color:var(--ink);font-family:var(--font-b);font-size:14px;line-height:1.5;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1{font-family:var(--font-d);font-weight:700;font-size:clamp(24px,4vw,34px);line-height:1.1;margin:0;letter-spacing:-.01em;text-wrap:balance}
+h2{font-family:var(--font-d);font-weight:600;font-size:17px;margin:0;text-wrap:balance}
+.sub{color:var(--ink2);margin:6px 0 0;max-width:70ch}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--page);padding:10px 0;display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;border-bottom:1px solid var(--rule)}
+.grp{display:flex;flex-direction:column;gap:4px;min-width:0}
+.lab{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);font-weight:500}
+.seg{display:flex;flex-wrap:wrap;gap:4px}
+.seg button{font:500 13px var(--font-b);color:var(--ink);background:var(--chip);border:1px solid transparent;border-radius:6px;padding:6px 12px;cursor:pointer;min-height:32px}
+.seg button:hover{border-color:var(--ink3)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.stat{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:12px 14px;min-width:0}
+.stat b{display:block;font:500 22px var(--font-m);letter-spacing:-.02em;margin-top:2px}
+.stat span{color:var(--ink2);font-size:12px}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:16px;min-width:0}
+.card header{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 16px;align-items:baseline;margin-bottom:8px}
+.card header p{margin:0;color:var(--ink2);font-size:13px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:4px 0 8px;font-size:12.5px;color:var(--ink2)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+svg{display:block;width:100%;overflow:visible}
+svg text{font-family:var(--font-m);font-size:11px;fill:var(--ink3)}
+.grid line{stroke:var(--grid);stroke-width:1}
+.axis{stroke:var(--rule)}
+.plot{position:relative;min-width:0}
+.tip{position:absolute;pointer-events:none;background:var(--surface);color:var(--ink);border:1px solid var(--ink3);border-radius:6px;padding:8px 10px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.18);z-index:9;min-width:140px;display:none}
+.tip b{font-family:var(--font-d);font-size:13px;display:block;margin-bottom:4px}
+.tip div{display:flex;justify-content:space-between;gap:14px;font-family:var(--font-m)}
+.tip i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px}
+.multi{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:12px}
+.multi .card{padding:12px}
+.multi h2{font-size:15px;margin-bottom:2px}
+.multi small{color:var(--ink3);display:block;margin-bottom:4px;font-size:12px}
+.tbl{overflow-x:auto}
+table{border-collapse:separate;border-spacing:2px;width:100%;font-family:var(--font-m);font-size:12.5px;min-width:520px}
+th{font:500 11px var(--font-b);letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);text-align:right;padding:4px 8px}
+th:first-child,td:first-child{text-align:left}
+td{padding:6px 8px;text-align:right;border-radius:3px;font-variant-numeric:tabular-nums}
+td.k{background:none;color:var(--ink);font-family:var(--font-b);font-weight:500;white-space:nowrap}
+td.k small{color:var(--ink3);font-weight:400;margin-left:6px}
+tr.mh td{padding-top:12px;font-family:var(--font-d);font-weight:600;color:var(--ink);background:none}
+.note{color:var(--ink2);font-size:12.5px;max-width:90ch}
+.note li{margin-bottom:4px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--rule);overflow-x:auto}
+.tabs button{white-space:nowrap;font:600 15px var(--font-d);color:var(--ink2);background:none;border:0;border-bottom:3px solid transparent;padding:10px 16px;cursor:pointer;margin-bottom:-1px}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-pressed="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.pane{display:flex;flex-direction:column;gap:20px;min-width:0}
+.tbl.wide table{min-width:900px}
+td.l{text-align:left;font-family:var(--font-b);color:var(--ink2);white-space:normal;min-width:180px}
+tr.dim td{color:var(--ink3)}
+.tag{font:500 10px var(--font-b);letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--ink3);border-radius:4px;padding:1px 5px;margin-left:6px;color:var(--ink3)}
+.upl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{font:500 13px var(--font-b);color:var(--ink);background:var(--chip);border:1px solid transparent;border-radius:6px;padding:6px 12px;cursor:pointer;min-height:32px}
+.btn:hover{border-color:var(--ink3)}
+.btn.pri{background:var(--accent);color:var(--accent-ink)}
+.sel{font:500 13px var(--font-b);color:var(--ink);background:var(--chip);border:1px solid transparent;border-radius:6px;padding:6px 10px;min-height:32px;max-width:100%}
+.btn.sm{padding:3px 9px;min-height:26px;font-size:12px}
+.btn.dng{color:#b3432b}
+.lnk{background:none;border:0;padding:0;font:inherit;color:var(--accent);cursor:pointer;text-align:left}
+.lnk:hover{text-decoration:underline}
+td.act{white-space:nowrap}
+.ov{position:fixed;inset:0;background:rgba(10,12,20,.55);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px}
+.ov[hidden]{display:none}
+.dlg{background:var(--surface);color:var(--ink);border:1px solid var(--rule);border-radius:10px;max-width:880px;width:100%;max-height:88vh;overflow:auto;padding:16px}
+.dlg input,.dlg select{font:inherit;color:var(--ink);background:var(--page);border:1px solid var(--rule);border-radius:6px;padding:6px 8px;min-width:0;width:100%}
+.dlg label{display:flex;flex-direction:column;gap:3px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}
+.eg{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.etbl input{width:auto}
+.eb{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ferr{color:#d03b3b;min-height:1.2em;margin:8px 0;font-size:13px}
+.chk{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--ink2)}
+.status{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--ink2)}
+.status b{color:var(--ink);font-weight:500}
+.status ul{margin:6px 0 0;padding-left:18px}
+.status.err{border-color:#d03b3b}
+.drop{outline:2px dashed var(--accent);outline-offset:-6px}
+@media (max-width:560px){.card{padding:12px}.bar{gap:10px}}
+</style>
+
+<div class="wrap">
+  <div>
+    <h1>Rope Production Explorer</h1>
+    <p class="sub" id="sub"></p>
+  </div>
+  <div class="tabs" role="group" aria-label="Report"><button type="button" id="tabRope" aria-pressed="false">Rope winding</button><button type="button" id="tabExt" aria-pressed="false">Extruder</button><button type="button" id="tabSales" aria-pressed="true">Sales</button><button type="button" id="tabVs" aria-pressed="false">Produced vs sold</button></div>
+<div class="pane" id="paneRope" hidden="">
+  <div class="bar" role="group" aria-label="Filters">
+    <div class="grp"><span class="lab">Machine</span><div class="seg" id="segLine"><button type="button" data-v="All" aria-pressed="true">All</button><button type="button" data-v="R1" aria-pressed="false">R1</button><button type="button" data-v="R2" aria-pressed="false">R2</button><button type="button" data-v="R3" aria-pressed="false">R3</button><button type="button" data-v="R4" aria-pressed="false">R4</button><button type="button" data-v="R5" aria-pressed="false">R5</button></div></div>
+    <div class="grp"><span class="lab">Measure</span><div class="seg" id="segMetric"><button type="button" data-v="kg" aria-pressed="true">Total kg</button><button type="button" data-v="perday" aria-pressed="false">kg per reported day</button><button type="button" data-v="kghr" aria-pressed="false">kg per hour</button></div></div>
+    <div class="grp"><span class="lab">Data</span>
+      <div class="upl">
+        <input type="file" id="fileIn" accept=".xlsx,.xlsm,.xls" multiple="" hidden="">
+        <button type="button" class="btn pri" id="btnUp">Upload Excel</button>
+        <label class="chk" for="merge"><input type="checkbox" id="merge"> Add to current data</label>
+        <button type="button" class="btn" id="btnReset">Use built-in data</button>
+      </div></div>
+  </div>
+  <div class="status" id="status" role="status" aria-live="polite"></div>
+  <div class="stats" id="stats"></div>
+
+  <section class="card">
+    <header><h2 id="tA">Total kg by diameter, all machines</h2><p id="pA">Each bar is one month. Kg are printed on the bars (hidden on very narrow screens). Hover for exact values.</p></header>
+    <div class="legend" id="lgMonth"></div>
+    <div class="plot" id="chA"></div>
+  </section>
+
+  <section class="card">
+    <header><h2 id="tB">Total kg by machine and month</h2><p id="pB">Stacked by machine, with the month total on top. Hover a month for the split.</p></header>
+    <div class="legend" id="lgLine"></div>
+    <div class="plot" id="chB"></div>
+  </section>
+
+  <section class="card">
+    <header><h2>Rope wastage by month</h2><p>Wastage kg divided by rope produced kg, for the machines selected above.</p></header>
+    <div class="plot" id="chW1"></div>
+  </section>
+
+  <section class="card">
+    <header><h2>Rope wastage by machine, per month</h2><p>Wastage as a share of each machine's output in the month. Hover for the kg.</p></header>
+    <div class="legend" id="lgW2"></div>
+    <div class="plot" id="chW2"></div>
+  </section>
+
+  <section class="card">
+    <header><h2 id="tC">Coils per day, all machines</h2><p>Total coils divided by the days with a report. Coil length differs by rope, so coils are not equal in kg.</p></header>
+    <div class="legend" id="lgMonthC"></div>
+    <div class="plot" id="chC"></div>
+  </section>
+
+  <section class="card">
+    <header><h2 id="tD">Coils per hour, all machines</h2><p>Average coils per 12-hour shift divided by 12.</p></header>
+    <div class="legend" id="lgMonthD"></div>
+    <div class="plot" id="chD"></div>
+  </section>
+
+  <section class="card">
+    <header><h2 id="tE">Coils each day, all machines</h2><p>One bar per reported day. Hover a bar for the date and the split by machine.</p></header>
+    <div class="legend" id="lgLineE"></div>
+    <div class="plot" id="chE"></div>
+  </section>
+
+  <section class="card">
+    <header><h2 id="tL">Coils by length, all machines</h2><p id="pL">Number of coils made of each length, by month. Yards (yds) and metres (m) are shown as logged, not converted. No 600 yd coils are in these reports yet; they will appear once logged.</p></header>
+    <div class="legend" id="lgMonthL"></div>
+    <div class="plot" id="chL"></div>
+  </section>
+
+  <section class="card">
+    <header><h2 id="tL2">Coils by length and machine</h2><p>All months together, stacked by machine, with the total on top.</p></header>
+    <div class="legend" id="lgLineL"></div>
+    <div class="plot" id="chL2"></div>
+  </section>
+
+  <section>
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 16px;margin-bottom:8px"><h2>Each machine, diameter by month</h2><div class="legend" id="lgMonth2" style="margin:0"></div></div>
+    <div class="multi" id="multi"></div>
+  </section>
+
+  <section class="card">
+    <header><h2>Table view</h2><p id="pT">Total kg. Darker cells are higher within the table.</p></header>
+    <div class="tbl" id="tbl"></div>
+  </section>
+
+  <ul class="note" id="notes"></ul>
+</div>
+
+<div class="pane" id="paneSales">
+  <div class="bar" role="group" aria-label="Sales data">
+    <div class="grp"><span class="lab">Data</span>
+      <div class="upl">
+        <input type="file" id="sFile" accept=".xlsx,.xlsm,.xls" multiple="" hidden="">
+        <button type="button" class="btn pri" id="sUp">Upload Excel</button>
+        <label class="chk" for="sMerge"><input type="checkbox" id="sMerge"> Add to current data</label>
+        <button type="button" class="btn" id="sReset">Use built-in data</button>
+      </div></div>
+    <div class="grp"><span class="lab">Month</span><select id="sfM" class="sel"></select></div>
+    <div class="grp"><span class="lab">Customer</span><select id="sfC" class="sel" style="max-width:260px"></select></div>
+  </div>
+  <div class="status" id="sStatus" role="status" aria-live="polite"></div>
+  <div class="stats" id="sStats"></div>
+  <section class="card"><header><h2>Quantity sold by month</h2><p>Kg invoiced in each month.</p></header><div class="plot" id="chS1"></div></section>
+  <section class="card"><header><h2>Sales value by month</h2><p>Invoice line value in OMR.</p></header><div class="plot" id="chS2"></div></section>
+  <section class="card"><header><h2>Quantity sold by diameter</h2><p>Kg sold per size, one bar per month.</p></header><div class="legend" id="lgS3"></div><div class="plot" id="chS3"></div></section>
+  <section class="card"><header><h2>Domestic and export, by month</h2><p>Kg sold, stacked by market.</p></header><div class="legend" id="lgS4"></div><div class="plot" id="chS4"></div></section>
+  <section class="card"><header><h2>Sales detail</h2><p>Switch between the invoice list, a month wise summary and a customer wise summary. <span class="ppc-pub-only">Edit or delete an invoice from the list.</span> Click a customer name to filter.</p></header>
+    <div class="seg" id="sView" style="margin-bottom:10px"><button type="button" data-v="inv" aria-pressed="true">Invoices</button><button type="button" data-v="mon" aria-pressed="false">Month wise</button><button type="button" data-v="cus" aria-pressed="false">Customer wise</button></div><div class="tbl" id="sDetail"></div></section>
+  <ul class="note" id="sNotes"></ul>
+</div>
+
+<div class="pane" id="paneVs" hidden="">
+  <div class="bar" role="group" aria-label="Produced versus sold filters">
+    <div class="grp"><span class="lab">Month</span><div class="seg" id="vsMon"></div></div>
+    <div class="grp"><span class="lab">Sales counted</span><div class="seg" id="vsWin"></div></div>
+  </div>
+  <div class="stats" id="vsStats"></div>
+  <section class="card"><header><h2>Produced and sold, by month</h2><p>Rope winding kg against invoiced kg.</p></header><div class="legend" id="lgV1"></div><div class="plot" id="chV1"></div></section>
+  <section class="card"><header><h2 id="tV2">Produced and sold by diameter</h2><p>Kg per size. Items without a size are shown as Other.</p></header><div class="legend" id="lgV2"></div><div class="plot" id="chV2"></div></section>
+  <section class="card"><header><h2 id="tV3">Sold as a share of produced</h2><p>Sold kg divided by produced kg for each size.</p></header><div class="plot" id="chV3"></div></section>
+  <section class="card"><header><h2>Diameter summary</h2></header><div class="tbl" id="vsTbl"></div></section>
+  <section class="card"><header><h2>Month by month, each diameter</h2><p>Made, sold and difference in kg.</p></header><div class="tbl" id="vsMat"></div></section>
+  <div class="multi" id="vsMulti"></div>
+  <ul class="note" id="vsNotes"></ul>
+</div>
+
+<div class="pane" id="paneExt" hidden="">
+  <div class="bar" role="group" aria-label="Extruder data">
+    <div class="grp"><span class="lab">Data</span>
+      <div class="upl">
+        <input type="file" id="xFile" accept=".xlsx,.xlsm,.xls" multiple="" hidden="">
+        <button type="button" class="btn pri" id="xUp">Upload Excel</button>
+        <label class="chk" for="xMerge"><input type="checkbox" id="xMerge"> Add to current data</label>
+        <button type="button" class="btn" id="xReset">Use built-in data</button>
+      </div></div>
+  </div>
+  <div class="status" id="xStatus" role="status" aria-live="polite"></div>
+  <div class="stats" id="xStats"></div>
+
+  <section class="card">
+    <header><h2>Net yarn per hour, by month</h2><p>Net yarn = raw material in minus wastage, divided by run hours. Full shifts of 10 to 14 hours only.</p></header>
+    <div class="plot" id="chX1"></div>
+  </section>
+
+  <section class="card">
+    <header><h2>Net yarn per hour, each shift report</h2><p>One bar per full shift, coloured by month. Hover for the denier and wastage.</p></header>
+    <div class="legend" id="lgX2"></div>
+    <div class="plot" id="chX2"></div>
+  </section>
+
+  <section class="card">
+    <header><h2>Net yarn per hour, by denier</h2><p>Average of full shifts in each denier band. Denier bands group nearby values.</p></header>
+    <div class="legend" id="lgX3"></div>
+    <div class="plot" id="chX3"></div>
+  </section>
+
+  <section class="card">
+    <header><h2>Raw material used, by month</h2><p>Kg of polypropylene (PP), HDPE and masterbatch with additives. Masterbatch is the total minus PP and HDPE.</p></header>
+    <div class="legend" id="lgX4"></div>
+    <div class="plot" id="chX4"></div>
+  </section>
+
+  <section class="card">
+    <header><h2>Wastage by month</h2><p>Reported wastage as a share of raw material in. Most of it is colour and die change purge.</p></header>
+    <div class="plot" id="chX5"></div>
+  </section>
+
+  <section class="card">
+    <header><h2>Run hours by month</h2><p>Total hours the extruder ran. The line under each month shows the days it ran.</p></header>
+    <div class="plot" id="chX6"></div>
+  </section>
+
+  <section class="card">
+    <header><h2>All shift reports</h2><p id="xPT"></p></header>
+    <div class="tbl wide" id="xTbl"></div>
+  </section>
+
+  <ul class="note" id="xNotes"></ul>
+</div>
+
+</div>
+<div class="tip" id="tip"></div>
+<script src="vendor/xlsx.full.min.js"></script>
+
+<script>
+let BUILTIN={"rows":[],"shifts":[],"mshifts":[],"reports":[]};
+let BUILTIN_SRC='No figures published yet', DATA=BUILTIN, SRC=BUILTIN_SRC, MON=[], MLAB={}, MFULL={}, MPART={}, DAYS={}, SKIPPED=[];
+/* ---- Excel reader: daily wise rope production report layout ---- */
+const MONTH_KEYS=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+function monthFromName(n){const s=String(n).toLowerCase();for(let i=0;i<12;i++){if(s.includes(MONTH_KEYS[i]))return i+1}return null}
+function isoDate(y,m,d){return y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0')}
+function normLen(s){
+  if(s===null||s===undefined)return null; const q=String(s).toLowerCase().replace(/\s+/g,'');
+  let m=q.match(/^(\d+(?:\.\d+)?)(yds|yrds|yards|yard|yd)/); if(m)return (+m[1])+' yds';
+  m=q.match(/^(\d+(?:\.\d+)?)(mtrs|mtr|meters|meter|m)/); if(m)return (+m[1])+' m';
+  return null;
+}
+function parseReportDate(v,month){
+  if(typeof v==='number'){
+    const dt=new Date(Date.UTC(1899,11,30)+Math.round(v)*864e5);
+    const y=dt.getUTCFullYear(),mo=dt.getUTCMonth()+1,d=dt.getUTCDate();
+    const c=[[y,mo,d]]; if(d<=12)c.push([y,d,mo]); /* day and month swapped by Excel */
+    if(month){for(const x of c){if(x[1]===month)return isoDate(x[0],x[1],x[2])}}
+    return isoDate(c[0][0],c[0][1],c[0][2]);
+  }
+  if(typeof v==='string'){
+    const m=v.trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+    if(m){let y=+m[3]; if(y<100)y+=2000; return isoDate(y,+m[2],+m[1])}
+  }
+  return null;
+}
+function parseRopeWorkbook(sheets){
+  const out={rows:[],shifts:[],mshifts:[],reports:[],warnings:[]};
+  const isRD=v=>typeof v==='string'&&/^report date/i.test(v.trim());
+  for(const sh of sheets){
+    const A=sh.aoa||[], n=A.length, month=monthFromName(sh.name);
+    for(let i=0;i<n;i++){
+      const r=A[i]||[]; const jj=r.findIndex(isRD); if(jj<0)continue;
+      let dv=null; for(let x=jj+1;x<r.length;x++){if(r[x]!==null&&r[x]!==undefined&&r[x]!==''){dv=r[x];break}}
+      const date=parseReportDate(dv,month);
+      if(!date){out.warnings.push(`Sheet "${sh.name}": a report date could not be read (row ${i+1}).`);continue}
+      let k=i+1; while(k<n&&!(A[k]||[]).some(v=>typeof v==='string'&&/^sl/i.test(v.trim())))k++;
+      if(k>=n)continue;
+      const col={};
+      (A[k]||[]).forEach((v,j)=>{ if(typeof v!=='string')return; const t=v.trim().toLowerCase();
+        if(t.startsWith('sl'))col.sl=j; else if(t.startsWith('machine'))col.machine=j; else if(t==='shift')col.shift=j;
+        else if(t.startsWith('rope size'))col.size=j; else if(t.startsWith('actual'))col.actual=j; else if(t.startsWith('no. of coils'))col.coils=j; else if(t.startsWith('length'))col.length=j; else if(t.startsWith('wastage'))col.waste=j; });
+      if(col.machine==null||col.actual==null||col.size==null){out.warnings.push(`${date}: column headings not recognised.`);continue}
+      k++; let mach=null,line=null,shift=null,size=null,pend=[],mismatch=false,len=null; const recs=[];
+      for(;k<n;k++){
+        const rr=A[k]||[];
+        if(typeof rr[0]==='string'&&rr[0].trim().toUpperCase()==='TOTAL')break;
+        if(rr.some(isRD))break;
+        const sl=col.sl!=null?rr[col.sl]:null, mn=rr[col.machine];
+        if(typeof mn==='string'&&mn.trim()){
+          mach=mn.trim(); const m=mach.match(/-R(\d)-/i); line=m?'R'+m[1]:null; size=null; pend=[]; len=null;
+          if(typeof sl==='number'&&line&&sl!==+line[1])mismatch=true;
+        }
+        const s=col.shift!=null?rr[col.shift]:null;
+        if(typeof s==='string'&&(s.trim()==='A'||s.trim()==='B'))shift=s.trim();
+        if(col.length!=null){const nl=normLen(rr[col.length]); if(nl)len=nl}
+        const sz=rr[col.size]; let dia=null;
+        if(sz!==null&&sz!==undefined&&sz!==''){
+          const nums=String(sz).match(/\d+(?:\.\d+)?/g)||[];
+          if(nums.length){dia=+nums[0];pend=nums.slice(1).map(Number);size=dia}
+        } else if(pend.length){dia=pend.shift();size=dia} else dia=size;
+        const act=rr[col.actual];
+        if(typeof act==='number'&&act>0&&line&&dia!=null)recs.push({line,shift:shift||'A',dia,kg:act,len:len||'Not stated',coils:(col.coils!=null&&typeof rr[col.coils]==='number')?rr[col.coils]:0,waste:(col.waste!=null&&typeof rr[col.waste]==='number')?rr[col.waste]:0});
+      }
+      out.reports.push([date,mismatch?1:0]);
+      if(mismatch){out.warnings.push(`${date}: skipped, the machine names do not match the row numbers.`);continue}
+      const mk=+date.slice(0,4)*100+ +date.slice(5,7), grp={};
+      recs.forEach(x=>{
+        out.rows.push([mk,x.line,x.dia,Math.round(x.kg*100)/100,date,x.coils,x.len]);
+        const g=grp[x.line+'|'+x.shift]||(grp[x.line+'|'+x.shift]={line:x.line,kg:0,coils:0,waste:0,d:new Set()});
+        g.kg+=x.kg; g.coils+=x.coils; g.waste+=x.waste; g.d.add(x.dia);
+      });
+      Object.values(grp).forEach(g=>{
+        out.mshifts.push([mk,g.line,Math.round(g.kg*100)/100,date,g.coils,Math.round(g.waste*100)/100]);
+        if(g.d.size===1)out.shifts.push([mk,g.line,[...g.d][0],Math.round(g.kg*100)/100,date]);
+      });
+    }
+  }
+  return out;
+}
+
+
+
+const LINES=['R1','R2','R3','R4','R5'];
+const DESC={R1:'32 mm line',R2:'12 mm line',R3:'8 mm line',R4:'4 mm Dura-line',R5:'4 mm Dura-line'};
+const state={line:'All',metric:'kg'};
+const METRICS={kg:{lab:'Total kg',unit:'kg'},perday:{lab:'kg per reported day',unit:'kg/day'},kghr:{lab:'kg per hour',unit:'kg/hr'}};
+const fmtN=(v,d)=>v==null?'–':v.toLocaleString('en-US',{maximumFractionDigits:d==null?0:d,minimumFractionDigits:d||0});
+const dec=()=>state.metric==='kghr'?1:0;
+const gcol=m=>`var(--mc${(((m%100)-7)%8+8)%8+1})`;
+const ml=gcol;
+const sl=l=>`var(--s${LINES.indexOf(l)+1})`;
+const MNAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function prep(){
+  const cnt={},first={},last={}; SKIPPED=[];
+  DATA.reports.forEach(([d,sk])=>{if(sk){SKIPPED.push(d);return}const mk=+d.slice(0,4)*100+ +d.slice(5,7),day=+d.slice(8);cnt[mk]=(cnt[mk]||0)+1;first[mk]=Math.min(first[mk]==null?99:first[mk],day);last[mk]=Math.max(last[mk]||0,day)});
+  MON=Object.keys(cnt).map(Number).sort((a,b)=>a-b); DAYS=cnt; MLAB={};MFULL={};MPART={};
+  const yrs=new Set(MON.map(m=>Math.floor(m/100)));
+  MON.forEach((m,i)=>{
+    const nm=MNAMES[m%100-1]+(yrs.size>1?" '"+String(Math.floor(m/100)).slice(2):'');
+    const dim=new Date(Math.floor(m/100),m%100,0).getDate(), f=first[m], l=last[m]; let part='';
+    if(MON.length===1){if(f>7||l<24)part=f+'–'+l}
+    else if(i===0&&f>7)part=f+'–'+dim; else if(i===MON.length-1&&l<24)part=(f<=7?1:f)+'–'+l;
+    MLAB[m]=nm; MPART[m]=part; MFULL[m]=nm+(part?` (${part})`:'');
+  });
+}
+const longDate=d=>{if(!d)return '–';const x=d.split('-');return +x[2]+' '+MNAMES[+x[1]-1]+' '+x[0]};
+
+function rowsFor(line){return DATA.rows.filter(r=>line==='All'||r[1]===line)}
+function diasFor(line){return [...new Set(rowsFor(line).map(r=>r[2]))].sort((a,b)=>a-b)}
+function val(line,dia,m){ // value for one machine (or All), diameter, month
+  if(state.metric==='kghr'){
+    const s=DATA.shifts.filter(r=>r[0]===m&&r[2]===dia&&(line==='All'||r[1]===line));
+    return s.length?s.reduce((a,r)=>a+r[3],0)/s.length/12:null;
+  }
+  const t=DATA.rows.filter(r=>r[0]===m&&r[2]===dia&&(line==='All'||r[1]===line)).reduce((a,r)=>a+r[3],0);
+  if(!t) return null;
+  return state.metric==='perday'?t/DAYS[m]:t;
+}
+function lineMonth(line,m){
+  if(state.metric==='kghr'){
+    const s=DATA.mshifts.filter(r=>r[0]===m&&r[1]===line); return s.length?s.reduce((a,r)=>a+r[2],0)/s.length/12:null;
+  }
+  const t=DATA.rows.filter(r=>r[0]===m&&r[1]===line).reduce((a,r)=>a+r[3],0);
+  if(!t) return null; return state.metric==='perday'?t/DAYS[m]:t;
+}
+const tipEl=document.getElementById('tip');
+function showTip(host,ev,title,items){
+  tipEl.innerHTML=`<b>${title}</b>`+items.map(i=>`<div><span><i style="background:${i.c}"></i>${i.n}</div>`.replace('</span>','')+'').join('');
+  tipEl.innerHTML=`<b>${title}</b>`+items.map(i=>`<div><span><i style="background:${i.c}"></i>${i.n}</span><span>${i.v}</span></div>`).join('');
+  tipEl.style.display='block';
+  const hb=host.getBoundingClientRect(), tb=tipEl.getBoundingClientRect();
+  const wb=document.body.getBoundingClientRect();
+  let x=ev.clientX+14, y=ev.clientY+14;
+  if(x+tb.width>window.innerWidth-8) x=ev.clientX-tb.width-14;
+  if(y+tb.height>window.innerHeight-8) y=ev.clientY-tb.height-14;
+  tipEl.style.position='fixed'; tipEl.style.left=Math.max(8,x)+'px'; tipEl.style.top=Math.max(8,y)+'px';
+}
+const hideTip=()=>{tipEl.style.display='none'};
+function nice(max){ if(!max) return {max:1,step:.25}; const p=Math.pow(10,Math.floor(Math.log10(max))); const f=max/p; const s=f<=1?.2:f<=2?.5:f<=5?1:2; const step=s*p/ (f<=1?1:1); let st=step; while(max/st>6) st*=2; return {max:Math.ceil(max/st)*st,step:st}; }
+
+function drawBars(host,cats,series,o){
+  // cats:[{key,label,sub}], series:[{name,color,vals:[...]}]; o:{stacked,height,unit,d}
+  host.innerHTML='';
+  const W=Math.max(260,host.clientWidth), H=o.height||280, L=46,R=8,B=cats.some(c=>c.sub)?44:30;
+  const n=cats.length, band=(W-L-R)/Math.max(n,1), step=o.thin?Math.max(1,Math.ceil(46/band)):1;
+  const ns0=Math.max(series.length,1), bwG=Math.max(4,Math.min(o.maxBw||18,band*.78/ns0-2)), fs=o.stacked?11:Math.min(11,bwG+1), showLab=o.stacked?band>=26:fs>=8;
+  let maxLen=1; cats.forEach((c,i)=>series.forEach(s=>{const v=s.vals[i]; if(v!=null&&v>0)maxLen=Math.max(maxLen,fmtN(v,o.d).length)}));
+  const T=!showLab?10:(o.stacked||o.hlab?26:Math.ceil(maxLen*fs*0.62)+12);
+  let mx=0; cats.forEach((c,i)=>{ if(o.stacked) mx=Math.max(mx,series.reduce((a,s)=>a+(s.vals[i]||0),0)); else series.forEach(s=>mx=Math.max(mx,s.vals[i]||0)); });
+  const sc=nice(mx), y=v=>T+(H-T-B)*(1-v/sc.max);
+  let g=`<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="${o.aria||'Bar chart'}"><g class="grid">`;
+  for(let v=0;v<=sc.max+1e-9;v+=sc.step){ g+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${fmtN(v,sc.step<1?1:0)}</text>`; }
+  g+=`</g><line class="axis" x1="${L}" x2="${W-R}" y1="${y(0)}" y2="${y(0)}" stroke="var(--rule)"/>`;
+  cats.forEach((c,i)=>{
+    const cx=L+band*i+band/2; const ns=series.length;
+    if(o.stacked){
+      const bw=Math.max(8,Math.min(band*.5,44)); let acc=0; const segs=series.map(s=>({s,v:s.vals[i]||0})).filter(z=>z.v>0);
+      segs.forEach((z,k)=>{ const y0=y(acc), y1=y(acc+z.v); acc+=z.v; const top=k===segs.length-1; const r=top?Math.min(4,(y0-y1)/2):0;
+        g+=`<path d="M${cx-bw/2},${y0} V${y1+r} ${r?`Q${cx-bw/2},${y1} ${cx-bw/2+r},${y1} H${cx+bw/2-r} Q${cx+bw/2},${y1} ${cx+bw/2},${y1+r}`:`H${cx+bw/2}`} V${y0} Z" fill="${z.s.color}" stroke="var(--surface)" stroke-width="2"/>`;
+        if(showLab&&!o.noInner&&y0-y1>=15) g+=`<text x="${cx}" y="${(y0+y1)/2+4}" text-anchor="middle" style="font-size:10px;fill:${z.s.txt||'#fff'}">${fmtN(z.v,o.d)}</text>`; });
+      if(showLab&&segs.length) g+=`<text x="${cx}" y="${y(acc)-7}" text-anchor="middle" style="font-size:11px;font-weight:500;fill:var(--ink)">${fmtN(acc,o.d)}</text>`;
+    } else {
+      const gap=2, avail=band*.78, bw=Math.max(4,Math.min(o.maxBw||18,avail/ns-gap)), tw=ns*bw+(ns-1)*gap;
+      series.forEach((s,k)=>{ const v=s.vals[i]; if(v==null||v<=0) return; const x0=cx-tw/2+k*(bw+gap), y1=y(v), y0=y(0), r=Math.min(3,(y0-y1)/2,bw/2);
+        g+=`<path d="M${x0},${y0} V${y1+r} Q${x0},${y1} ${x0+r},${y1} H${x0+bw-r} Q${x0+bw},${y1} ${x0+bw},${y1+r} V${y0} Z" fill="${s.color}"/>`;
+        if(showLab&&o.hlab) g+=`<text x="${x0+bw/2}" y="${y1-6}" text-anchor="middle" style="font-size:11px;font-weight:500;fill:var(--ink)">${fmtN(v,o.d)}</text>`;
+        else if(showLab) g+=`<text transform="translate(${x0+bw/2+fs*0.35},${y1-4}) rotate(-90)" style="font-size:${fs}px;fill:var(--ink2)">${fmtN(v,o.d)}</text>`; });
+    }
+    if(i%step===0) g+=`<text x="${cx}" y="${H-B+16}" text-anchor="middle" style="fill:var(--ink2)">${c.label}</text>`;
+    if(c.sub) g+=`<text x="${cx}" y="${H-B+30}" text-anchor="middle">${c.sub}</text>`;
+    g+=`<rect data-i="${i}" x="${L+band*i}" y="${T}" width="${band}" height="${H-T-B}" fill="transparent"/>`;
+  });
+  g+='</svg>'; host.innerHTML=g;
+  host.querySelectorAll('rect[data-i]').forEach(r=>{
+    const i=+r.dataset.i, c=cats[i];
+    const mv=ev=>{ let items=series.filter(s=>s.vals[i]!=null&&s.vals[i]>0).map(s=>({c:s.color,n:s.name,v:fmtN(s.vals[i],o.d)+' '+o.unit}));
+      if(o.stacked&&items.length>1) items.push({c:'transparent',n:'Total',v:fmtN(series.reduce((a,s)=>a+(s.vals[i]||0),0),o.d)+' '+o.unit});
+      if(!items.length) items=[{c:'transparent',n:'No output',v:''}]; showTip(host,ev,c.tip||c.label,items); };
+    r.addEventListener('pointermove',mv); r.addEventListener('pointerleave',hideTip);
+  });
+}
+
+function legend(el,items){ el.innerHTML=items.map(i=>`<span><i style="background:${i.c}"></i>${i.n}</span>`).join(''); }
+
+function render(){
+  const {line,metric}=state, M=METRICS[metric], d=dec();
+  // controls
+  document.querySelectorAll('#segLine button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===line));
+  document.querySelectorAll('#segMetric button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===metric));
+  const lname=line==='All'?'all machines':line;
+  // stats
+  const rows=rowsFor(line); const tot=rows.reduce((a,r)=>a+r[3],0);
+  const perM=MON.map(m=>rows.filter(r=>r[0]===m).reduce((a,r)=>a+r[3],0)/DAYS[m]);
+  const byDia={}; rows.forEach(r=>byDia[r[2]]=(byDia[r[2]]||0)+r[3]);
+  const topD=Object.entries(byDia).sort((a,b)=>b[1]-a[1])[0];
+  const chg=perM.length>1&&perM[perM.length-2]?((perM[perM.length-1]/perM[perM.length-2]-1)*100):0;
+  const nM=MON.length, cur=MON[nM-1], prv=MON[nM-2];
+  const lastD=DATA.reports.map(r=>r[0]).sort().slice(-1)[0], firstD=DATA.reports.map(r=>r[0]).sort()[0];
+  document.getElementById('stats').innerHTML=
+   `<div class="stat"><span>Rope output, ${lname}</span><b>${fmtN(tot)} kg</b><span>${longDate(firstD)} to ${longDate(lastD)}</span></div>`+
+   (nM>1?`<div class="stat"><span>${MLAB[cur]} vs ${MLAB[prv]}, kg per reported day</span><b>${chg>=0?'+':''}${fmtN(chg)}%</b><span>${fmtN(perM[nM-1])} vs ${fmtN(perM[nM-2])} kg/day</span></div>`:`<div class="stat"><span>Average per reported day</span><b>${fmtN(perM[0])} kg</b><span>${DAYS[MON[0]]} reports</span></div>`)+
+   `<div class="stat"><span>Largest share by diameter</span><b>${topD?topD[0]+' mm':'–'}</b><span>${topD?fmtN(topD[1])+' kg ('+fmtN(topD[1]/tot*100)+'%)':''}</span></div>`;
+  // A: diameter by month
+  const dias=diasFor(line);
+  document.getElementById('tA').textContent=`${M.lab} by diameter, ${lname}`;
+  document.getElementById('pA').textContent='Each bar is one month. Kg are printed on the bars (hidden on very narrow screens). Hover for exact values.';
+  legend(document.getElementById('lgMonth'),MON.map(m=>({c:ml(m),n:MFULL[m]})));
+  legend(document.getElementById('lgMonth2'),MON.map(m=>({c:ml(m),n:MFULL[m]})));
+  drawBars(document.getElementById('chA'),dias.map(x=>({label:x+' mm',tip:x+' mm, '+lname})),MON.map(m=>({name:MFULL[m],color:ml(m),vals:dias.map(x=>val(line,x,m))})),{unit:M.unit,d,height:300,aria:M.lab+' by diameter and month'});
+  // B: machine by month
+  const lines=LINES;
+  document.getElementById('tB').textContent=metric==='kghr'?'Average kg per hour, by machine and month':`${M.lab} by machine and month`;
+  document.getElementById('pB').textContent=metric==='kghr'?'Average over every shift the machine ran, all diameters.':'Stacked by machine, with the month total on top. Hover a month for the split.';
+  legend(document.getElementById('lgLine'),lines.map(l=>({c:sl(l),n:l})));
+  if(metric==='kghr'){
+    drawBars(document.getElementById('chB'),MON.map(m=>({label:MLAB[m],sub:MPART[m]?MPART[m]+' '+MLAB[m]:'',tip:MFULL[m]})),lines.map(l=>({name:l,color:sl(l),txt:(l==='R4'||l==='R5')?'#0f1214':'#fff',vals:MON.map(m=>lineMonth(l,m))})),{unit:M.unit,d,height:280,aria:'kg per hour by machine and month'});
+  } else {
+    drawBars(document.getElementById('chB'),MON.map(m=>({label:MLAB[m],sub:MPART[m]?MPART[m]+' '+MLAB[m]:'',tip:MFULL[m]})),lines.map(l=>({name:l,color:sl(l),txt:(l==='R4'||l==='R5')?'#0f1214':'#fff',vals:MON.map(m=>lineMonth(l,m))})),{stacked:true,unit:M.unit,d,height:280,aria:M.lab+' by machine and month'});
+  }
+  // coils
+  const cl=line==='All'?LINES:[line], lname2=line==='All'?'all machines':line;
+  const cpd=(l,m)=>{const t=DATA.mshifts.filter(r=>r[0]===m&&r[1]===l).reduce((a,r)=>a+(r[4]||0),0);return t?t/DAYS[m]:null};
+  const cph=(l,m)=>{const s=DATA.mshifts.filter(r=>r[0]===m&&r[1]===l);const t=s.reduce((a,r)=>a+(r[4]||0),0);return t?t/s.length/12:null};
+  const mleg=MON.map(m=>({c:ml(m),n:MFULL[m]}));
+  legend(document.getElementById('lgMonthC'),mleg); legend(document.getElementById('lgMonthD'),mleg);
+  const lcats=cl.map(l=>({label:l,tip:l+' ('+DESC[l]+')'}));
+  document.getElementById('tC').textContent='Coils per day, '+lname2;
+  document.getElementById('tD').textContent='Coils per hour, '+lname2;
+  drawBars(document.getElementById('chC'),lcats,MON.map(m=>({name:MFULL[m],color:ml(m),vals:cl.map(l=>cpd(l,m))})),{unit:'coils/day',d:1,height:280,aria:'Coils per day by machine and month'});
+  drawBars(document.getElementById('chD'),lcats,MON.map(m=>({name:MFULL[m],color:ml(m),vals:cl.map(l=>cph(l,m))})),{unit:'coils/hr',d:2,height:280,aria:'Coils per hour by machine and month'});
+  const dates=DATA.reports.filter(r=>!r[1]).map(r=>r[0]).sort(), per={};
+  DATA.mshifts.forEach(r=>{ if(!cl.includes(r[1]))return; const o2=per[r[3]]||(per[r[3]]={}); o2[r[1]]=(o2[r[1]]||0)+(r[4]||0); });
+  const dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  document.getElementById('tE').textContent='Coils each day, '+lname2;
+  legend(document.getElementById('lgLineE'),cl.map(l=>({c:sl(l),n:l})));
+  drawBars(document.getElementById('chE'),dates.map(dd=>{const x=dd.split('-');return {label:(+x[2])+' '+MNAMES[+x[1]-1],tip:longDate(dd)+' ('+dn[new Date(dd+'T00:00:00Z').getUTCDay()]+')'}}),
+    cl.map(l=>({name:l,color:sl(l),txt:(l==='R4'||l==='R5')?'#0f1214':'#fff',vals:dates.map(dd=>(per[dd]&&per[dd][l])||null)})),{stacked:true,thin:true,unit:'coils',d:0,height:300,aria:'Coils per day by machine'});
+  // wastage
+  {
+    const ms=DATA.mshifts.filter(r=>cl.includes(r[1]));
+    const wk=(m,l)=>{const a=ms.filter(r=>r[0]===m&&(l==null||r[1]===l));return {k:a.reduce((s,r)=>s+r[2],0),w:a.reduce((s,r)=>s+(r[5]||0),0)}};
+    drawBars(document.getElementById('chW1'),MON.map(m=>({label:MLAB[m],sub:wk(m).w?fmtN(wk(m).w)+' kg waste':'',tip:MFULL[m]+': '+fmtN(wk(m).w)+' kg wastage of '+fmtN(wk(m).k)+' kg'})),
+      [{name:'Wastage',color:'var(--s2)',vals:MON.map(m=>{const x=wk(m);return x.k&&x.w?x.w/x.k*100:null})}],{unit:'% of rope produced',d:2,height:240,maxBw:64,hlab:true,aria:'Rope wastage percent by month'});
+    legend(document.getElementById('lgW2'),cl.map(l=>({c:sl(l),n:l})));
+    drawBars(document.getElementById('chW2'),MON.map(m=>({label:MLAB[m],tip:MFULL[m]})),
+      cl.map(l=>({name:l,color:sl(l),txt:(l==='R4'||l==='R5')?'#0f1214':'#fff',vals:MON.map(m=>{const x=wk(m,l);return x.k&&x.w?x.w/x.k*100:null})})),{unit:'% of output',d:2,height:280,aria:'Rope wastage percent by machine and month'});
+  }
+  // coil length (yards and metres kept as logged)
+  const lenOf=r=>r[6]||'Not stated';
+  const lrows=DATA.rows.filter(r=>cl.includes(r[1]));
+  const lk=l=>l==='Not stated'?[3,0]:[l.endsWith('yds')?0:1,parseFloat(l)];
+  const lset=[...new Set(lrows.map(lenOf))].sort((a,b)=>{const x=lk(a),y=lk(b);return x[0]-y[0]||x[1]-y[1]});
+  const lcat=lset.map(l=>({label:l,tip:l+' coils, '+lname2}));
+  const lcnt=(l,m,ln)=>{const t=lrows.filter(r=>(m==null||r[0]===m)&&(ln==null||r[1]===ln)&&lenOf(r)===l).reduce((a,r)=>a+(r[5]||0),0);return t||null};
+  document.getElementById('tL').textContent='Coils by length, '+lname2;
+  const hasY600=DATA.rows.some(r=>r[6]==='600 yds');
+  document.getElementById('pL').textContent='Number of coils made of each length, by month. Yards (yds) and metres (m) are shown as logged, not converted.'+(hasY600?'':' No 600 yd coils are in these reports yet; they will appear once logged.');
+  legend(document.getElementById('lgMonthL'),mleg);
+  drawBars(document.getElementById('chL'),lcat,MON.map(m=>({name:MFULL[m],color:ml(m),vals:lset.map(l=>lcnt(l,m,null))})),{unit:'coils',d:0,height:300,aria:'Coils by length and month'});
+  legend(document.getElementById('lgLineL'),cl.map(l=>({c:sl(l),n:l})));
+  drawBars(document.getElementById('chL2'),lcat,cl.map(l=>({name:l,color:sl(l),txt:(l==='R4'||l==='R5')?'#0f1214':'#fff',vals:lset.map(x=>lcnt(x,null,l))})),{stacked:true,unit:'coils',d:0,height:300,aria:'Coils by length and machine'});
+  // C: small multiples
+  const multi=document.getElementById('multi'); multi.innerHTML='';
+  const desc={R1:'32 mm line',R2:'12 mm line',R3:'8 mm line',R4:'4 mm Dura-line',R5:'4 mm Dura-line'};
+  LINES.forEach(l=>{
+    const c=document.createElement('div'); c.className='card'; c.innerHTML=`<h2>${l}</h2><small>${desc[l]}. Scale is ${M.unit}.</small><div class="plot"></div>`; multi.appendChild(c);
+    const ds=diasFor(l);
+    drawBars(c.querySelector('.plot'),ds.map(x=>({label:x+' mm',tip:l+', '+x+' mm'})),MON.map(m=>({name:MFULL[m],color:ml(m),vals:ds.map(x=>val(l,x,m))})),{unit:M.unit,d,height:240,aria:l+' '+M.lab+' by diameter and month'});
+  });
+  // D: table
+  document.getElementById('pT').textContent=`${M.lab}. Darker cells are higher within the table.`;
+  let all=[]; const body=[];
+  LINES.forEach(l=>{ ds=diasFor(l); body.push({h:l,ds}); });
+  const vals={}; body.forEach(b=>b.ds.forEach(x=>MON.forEach(m=>{const v=val(b.h,x,m); vals[b.h+'|'+x+'|'+m]=v; if(v!=null) all.push(v);})));
+  const mx=Math.max(...all,1);
+  let h=`<table><thead><tr><th>Machine and diameter</th>${MON.map(m=>`<th>${MLAB[m]}</th>`).join('')}</tr></thead><tbody>`;
+  body.forEach(b=>{ h+=`<tr class="mh"><td colspan="5">${b.h} <small style="font-weight:400;color:var(--ink3)">${desc[b.h]}</small></td></tr>`;
+    b.ds.forEach(x=>{ h+=`<tr><td class="k">${x} mm</td>`; MON.forEach(m=>{ const v=vals[b.h+'|'+x+'|'+m]; if(v==null){h+='<td style="color:var(--ink3)">–</td>';return;} const p=Math.round(8+v/mx*80); h+=`<td style="background:color-mix(in srgb,var(--heat) ${p}%,var(--surface));color:${p>52?'#fff':'var(--ink)'}">${fmtN(v,d)}</td>`; }); h+='</tr>'; }); });
+  h+='</tbody></table>'; document.getElementById('tbl').innerHTML=h;
+}
+function renderMeta(){
+  const firstD=DATA.reports.map(r=>r[0]).sort()[0], lastD=DATA.reports.map(r=>r[0]).sort().slice(-1)[0];
+  setSub();
+  document.getElementById('notes').innerHTML=
+   '<li>Output counts the kg logged against each rope size on each report. Shifts are taken as 12 hours, so kg/hr is the shift\'s kg divided by 12.</li>'+
+   '<li>kg/hr uses only shifts where a machine ran one diameter, so changeovers do not blur the rate.</li>'+
+   `<li>"kg per reported day" divides each month by its days with a report (${MON.map(m=>MLAB[m]+' '+DAYS[m]).join(', ')}), so part months compare fairly.</li>`+
+   (SKIPPED.length?`<li>Left out: ${SKIPPED.map(longDate).join(', ')}, where the machine names do not match their row numbers.</li>`:'')+
+   '<li>Machines: R1 32 mm line, R2 12 mm line, R3 8 mm line, R4 and R5 the 4 mm Dura-line.</li>';
+}
+let upMsg=null;
+function renderStatus(){
+  const el=document.getElementById('status'); el.className='status'+(upMsg&&upMsg.err?' err':'');
+  const nrep=DATA.reports.length;
+  let h=upMsg&&upMsg.err?`<b>${upMsg.err}</b>`:`<b>Data in use:</b> ${SRC}. ${nrep} daily reports, ${DATA.rows.length} rope entries.${PPC.mode==='viewer'?'':' Upload a daily wise production report workbook (one sheet per month) to replace it, or tick "Add to current data" to merge new dates.'}`;
+  if(upMsg&&upMsg.warn&&upMsg.warn.length)h+='<ul>'+upMsg.warn.slice(0,8).map(w=>`<li>${w}</li>`).join('')+(upMsg.warn.length>8?`<li>${upMsg.warn.length-8} more notes</li>`:'')+'</ul>';
+  el.innerHTML=h; document.getElementById('btnReset').hidden=(PPC.mode==='publisher'?!ppcDraft('rpx_data'):DATA===BUILTIN);
+}
+function mergeData(base,inc){
+  const dates=new Set(inc.reports.map(r=>r[0])), keep=a=>a.filter(r=>!dates.has(r.find(x=>typeof x==='string'&&/^\d{4}-\d\d-\d\d$/.test(x))));
+  return {rows:keep(base.rows).concat(inc.rows),shifts:keep(base.shifts).concat(inc.shifts),mshifts:keep(base.mshifts).concat(inc.mshifts),
+          reports:base.reports.filter(r=>!dates.has(r[0])).concat(inc.reports)};
+}
+async function handleFiles(files){
+  files=[...files]; if(!files.length)return;
+  if(typeof XLSX==='undefined'){upMsg={err:'The Excel reader did not load. Check the connection and reload the page.'};renderStatus();return}
+  const inc={rows:[],shifts:[],mshifts:[],reports:[],warnings:[]}; const names=[];
+  for(const f of files){
+    try{
+      const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});
+      const sheets=wb.SheetNames.map(n=>({name:n,aoa:XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:null})}));
+      const o=parseRopeWorkbook(sheets);
+      if(!o.reports.length){inc.warnings.push(`${f.name}: no daily reports found. It needs "Report Date:" blocks like the daily wise production report.`);continue}
+      ['rows','shifts','mshifts','reports','warnings'].forEach(k=>inc[k]=inc[k].concat(o[k])); names.push(f.name); PPC.keepFiles([f],'rope');
+    }catch(e){inc.warnings.push(`${f.name}: this file could not be read as an Excel workbook.`)}
+  }
+  if(!inc.reports.length){upMsg={err:'No daily reports were found in the uploaded file.',warn:inc.warnings};renderStatus();return}
+  const other=inc.rows.filter(r=>!LINES.includes(r[1])).length; if(other)inc.warnings.push(`${other} entries on machines other than R1 to R5 were ignored.`);
+  inc.rows=inc.rows.filter(r=>LINES.includes(r[1]));
+  const merge=document.getElementById('merge').checked;
+  DATA=merge?mergeData(DATA,inc):{rows:inc.rows,shifts:inc.shifts,mshifts:inc.mshifts,reports:inc.reports};
+  SRC=(merge&&DATA!==BUILTIN?SRC+' + ':'')+names.join(', ');
+  try{localStorage.setItem('rpx_data',JSON.stringify({DATA,SRC}))}catch(e){}
+  upMsg={warn:inc.warnings}; refresh();
+}
+function refresh(){prep();renderMeta();renderStatus();if(TAB==='rope')render()}
+function mk(id,items,key){
+  const el=document.getElementById(id); el.innerHTML='';
+  items.forEach(([v,t])=>{ const b=document.createElement('button'); b.type='button'; b.dataset.v=v; b.textContent=t; b.addEventListener('click',()=>{state[key]=v; try{localStorage.setItem('rpx',JSON.stringify(state))}catch(e){} render();}); el.appendChild(b); });
+}
+mk('segLine',[['All','All']].concat(LINES.map(l=>[l,l])),'line');
+mk('segMetric',[['kg','Total kg'],['perday','kg per reported day'],['kghr','kg per hour']],'metric');
+try{const s=JSON.parse(localStorage.getItem('rpx')||'null'); if(s&&(s.line==='All'||LINES.includes(s.line))&&METRICS[s.metric]){state.line=s.line;state.metric=s.metric;}}catch(e){}
+/* ===== Extruder page ===== */
+let XBUILTIN=[];
+let XBUILTIN_SRC='No figures published yet', XD=XBUILTIN, XSRC=XBUILTIN_SRC, XMON=[], xMsg=null, TAB='rope';
+const mkey=d=>+d.slice(0,4)*100+ +d.slice(5,7);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const hhmm=f=>{if(f==null)return null;const m=Math.round(f*1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')};
+function ptime(v){
+  if(v===null||v===undefined||v==='')return null;
+  if(typeof v==='number')return v;
+  const m=String(v).toUpperCase().replace(/\s+/g,'').match(/^(\d{1,2}):(\d{2})(AM|PM)?$/); if(!m)return null;
+  let h=+m[1]; const ap=m[3]; if(ap==='PM'&&h<12)h+=12; if(ap==='AM'&&h===12)h=0;
+  return (h*60+ +m[2])/1440;
+}
+/* record: [date, shift, start, stop, denier, hours, rawIn, pp, hdpe, waste, remarks] */
+function parseExtWorkbook(sheets){
+  const out={recs:[],warnings:[]};
+  const isH=v=>typeof v==='string'&&v.trim()==='Daily Plant Production Report';
+  const num=v=>typeof v==='number'?v:null;
+  for(const sh of sheets){
+    const A=sh.aoa||[], month=monthFromName(sh.name), heads=[];
+    A.forEach((r,i)=>(r||[]).forEach((v,j)=>{if(isH(v))heads.push([i,j])}));
+    for(const [i,j] of heads){
+      const nr=heads.filter(h=>h[0]>i).map(h=>h[0]), i1=nr.length?Math.min(...nr):A.length;
+      const sc=heads.filter(h=>h[0]===i&&h[1]>j).map(h=>h[1]), j1=sc.length?Math.min(...sc):1e9;
+      const g=A.slice(i,i1).map(r=>(r||[]).slice(j,j1)), rec={};
+      g.forEach((r,gi)=>{ r.forEach((v,cj)=>{
+        if(typeof v!=='string')return; const q=v.trim();
+        if(q.startsWith('Shift -'))rec.shift=q.split('-')[1].trim();
+        else if(q==='Date')rec.date=parseReportDate(r[cj+1],month);
+        else if(q==='Start Time'){const nx=g[gi+1]||[];rec.start=ptime(nx[cj]);rec.stop=ptime(nx[cj+1]);rec.denier=num(nx[cj+2])}
+        else if(q==='Quantity (kgs)')rec.q=true;
+        else if(q==='TOTAL'&&rec.raw===undefined)rec.raw=num(r[cj+2]);
+        else if(q.startsWith('Wastage'))rec.w=true;
+        else if(q==='Total'&&rec.w&&rec.waste===undefined)rec.waste=num(r[cj+1]);
+        else if(q.startsWith('Remarks')){const rr=r.slice(cj+1).filter(x=>x!==null&&x!==undefined&&x!=='');rec.rem=rr.length?String(rr[0]).trim():''}
+        else if((q==='PP'||q==='HDPE')&&rec.q&&rec.raw===undefined)rec[q]=num(r[cj+2]);
+      })});
+      if(!rec.date||rec.raw==null){out.warnings.push(`Sheet "${sh.name}": a report block at row ${i+1} was skipped because its date or total was not found.`);continue}
+      const shf=rec.shift||'A'; let hours=null;
+      if(rec.start!=null&&rec.stop!=null){hours=(rec.stop-rec.start)*24; if(hours<=0)hours+=24; hours=Math.round(hours*100)/100}
+      if(hours!=null&&hours>14)out.warnings.push(`${rec.date} shift ${shf}: a run time of ${hours} h looks wrong, so it is left out of the per-hour averages.`);
+      out.recs.push([rec.date,shf,hhmm(rec.start),hhmm(rec.stop),rec.denier,hours,Math.round(rec.raw*100)/100,rec.PP==null?0:rec.PP,rec.HDPE==null?0:rec.HDPE,rec.waste==null?0:rec.waste,rec.rem||'']);
+    }
+  }
+  return out;
+}
+const rateOk=r=>r[5]!=null&&r[5]>=10&&r[5]<=14;
+const netOf=r=>r[6]-r[9];
+const BANDS=['11,000–11,500','12,500–15,000','16,000–17,500','18,000–21,000','25,000'];
+const denBand=d=>d==null?null:d<=11500?BANDS[0]:d<=15000?BANDS[1]:d<=17500?BANDS[2]:d<=21000?BANDS[3]:BANDS[4];
+function xprep(){
+  XD=XD.slice().sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:(a[1]<b[1]?-1:1));
+  XMON=[...new Set(XD.map(r=>mkey(r[0])))].sort((a,b)=>a-b);
+}
+const xml=gcol;
+const xlab=m=>MNAMES[m%100-1]+(new Set(XMON.map(x=>Math.floor(x/100))).size>1?" '"+String(Math.floor(m/100)).slice(2):'');
+/* ===== Sales and produced-vs-sold ===== */
+let SBUILTIN=[];
+let SBUILTIN_NAME='No figures published yet';
+let SD=SBUILTIN, SSRC=SBUILTIN_NAME, sMsg=null, SMON=[], VSM='all', VSW='month';
+/* line: [invoiceNo, date, customer, segment, description, resin, coils, qty, value] */
+const OTHER='Other items';
+const parseDia=d=>{const m=String(d||'').match(/(\d+(?:\.\d+)?)\s*MM/i);return m?+m[1]:null};
+const monName=(m,list)=>MNAMES[m%100-1]+(new Set(list.map(x=>Math.floor(x/100))).size>1?" '"+String(Math.floor(m/100)).slice(2):'');
+function sNorm(h){return String(h==null?'':h).toLowerCase().replace(/[^a-z0-9]/g,'')}
+function sNum(v){
+  if(v===null||v===undefined||v==='')return null; if(typeof v==='number')return isFinite(v)?v:null;
+  const t=String(v).replace(/[,\s]/g,'').replace(/^\((.*)\)$/,'-$1').replace(/OMR|KGS?/ig,''); const n=parseFloat(t); return isNaN(n)?null:n;
+}
+const S_MON={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,sept:9,oct:10,nov:11,dec:12};
+function sDate(v){
+  if(v===null||v===undefined||v==='')return '';
+  if(typeof v==='number'){const p=(typeof XLSX!=='undefined'&&XLSX.SSF)?XLSX.SSF.parse_date_code(v):null;return p?isoDate(p.y,p.m,p.d):''}
+  const t=String(v).trim(); let m;
+  if((m=t.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/)))return isoDate(+m[1],+m[2],+m[3]);
+  if((m=t.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/))){let y=+m[3];if(y<100)y+=2000;return isoDate(y,+m[2],+m[1])}
+  if((m=t.match(/^(\d{1,2})[-\s\/]([A-Za-z]{3,9})[-\s\/,]*(\d{2,4})/))){const mo=S_MON[m[2].slice(0,4).toLowerCase()]||S_MON[m[2].slice(0,3).toLowerCase()];let y=+m[3];if(y<100)y+=2000;if(mo)return isoDate(y,mo,+m[1])}
+  return '';
+}
+const S_ALIAS={invoice:['invoice','invoiceno','invoicenumber','invno','invoiceid','billno'],date:['date','invoicedate'],segment:['segment','market'],resin:['resin','material'],
+  customer:['customername','customer','party','partyname'],desc:['description','itemdescription','item','particulars'],coils:['noofcoils','coils','rolls','noofrolls'],
+  qty:['quantity','qty','quantitykg','qtykg'],gross:['grossvalueomr','grossvalue','gross','linetotal','amount'],inv:['invoicevalueomr','invoicevalue']};
+function parseSalesWorkbook(sheets){
+  const out={lines:[],warnings:[],invoices:0}; let seen=new Set(), nodate=0;
+  for(const sh of sheets){
+    const A=sh.aoa||[]; let hi=-1,map={};
+    for(let i=0;i<Math.min(A.length,15)&&hi<0;i++){
+      const mp={}; (A[i]||[]).forEach((c,j)=>{const k=sNorm(c); if(!k)return; for(const f in S_ALIAS){if(mp[f]===undefined&&S_ALIAS[f].includes(k))mp[f]=j}});
+      if(mp.invoice!==undefined&&mp.desc!==undefined&&mp.qty!==undefined){hi=i;map=mp}
+    }
+    if(hi<0)continue;
+    const get=(r,f)=>map[f]===undefined?null:r[map[f]]; let last={no:'',date:'',cust:'',seg:''};
+    for(let j=hi+1;j<A.length;j++){
+      const r=A[j]||[]; const qty=sNum(get(r,'qty')); const desc=String(get(r,'desc')==null?'':get(r,'desc')).trim();
+      let no=String(get(r,'invoice')==null?'':get(r,'invoice')).replace(/\s+/g,'');
+      if(!no&&qty===null&&!desc)continue;
+      if(/^(grand)?total/i.test(no)||/^(grand)?total/i.test(desc.replace(/\s+/g,'')))break;
+      if(!no)no=last.no; else last.no=no; if(!no)continue;
+      const d=sDate(get(r,'date')); if(d){last.date=d;last.noD=no}
+      const date=d||(last.noD===no?last.date:'');
+      const cust=String(get(r,'customer')==null?'':get(r,'customer')).replace(/\s*\n\s*/g,', ').trim()||(last.noC===no?last.cust:'');
+      if(cust){last.cust=cust;last.noC=no}
+      const sr=String(get(r,'segment')==null?'':get(r,'segment')).trim().toLowerCase(); const seg=sr?(sr.indexOf('exp')===0?'export':'domestic'):(last.noS===no?last.seg:'domestic');
+      last.seg=seg; last.noS=no;
+      if(qty===null)continue;
+      if(!date){nodate++;continue}
+      let val=sNum(get(r,'gross')); if(val===null)val=sNum(get(r,'inv')); if(val===null)val=0;
+      seen.add(no);
+      out.lines.push([no,date,cust,seg,desc,String(get(r,'resin')==null?'':get(r,'resin')).trim(),sNum(get(r,'coils'))||0,Math.round(qty*1000)/1000,Math.round(val*1000)/1000]);
+    }
+  }
+  out.invoices=seen.size; if(nodate)out.warnings.push(`${nodate} rows were skipped because their date was missing or not recognised.`);
+  return out;
+}
+function sprep(){
+  SD=SD.slice().sort((a,b)=>a[1]<b[1]?-1:a[1]>b[1]?1:(a[0]<b[0]?-1:1));
+  SMON=[...new Set(SD.map(l=>mkey(l[1])))].sort((a,b)=>a-b);
+  if(VSM!=='all'&&!MON.includes(VSM))VSM='all';
+}
+function sstatus(){
+  const el=document.getElementById('sStatus'); el.className='status'+(sMsg&&sMsg.err?' err':'');
+  const n=new Set(SD.map(l=>l[0])).size;
+  let h=sMsg&&sMsg.err?`<b>${esc(sMsg.err)}</b>`:`<b>Data in use:</b> ${esc(SSRC)}. ${n} invoices, ${SD.length} lines.${PPC.mode==='viewer'?'':PPC.mode==='publisher'?' Upload the sales register to replace it, or tick "Add to current data" to merge new invoices.':' This is a copy of the sales dashboard data. To update it, use "Export to Excel (register format)" in the PPC Sales Dashboard and upload that file here, or tick "Add to current data" to merge new invoices.'}`;
+  if(sMsg&&sMsg.warn&&sMsg.warn.length)h+='<ul>'+sMsg.warn.slice(0,8).map(w=>`<li>${esc(w)}</li>`).join('')+'</ul>';
+  el.innerHTML=h; document.getElementById('sReset').hidden=(PPC.mode==='publisher'?!ppcDraft('rpx_sales'):SD===SBUILTIN);
+}
+const sumQ=a=>a.reduce((s,l)=>s+l[7],0);
+let SFM='all', SFC='all', SVIEW='inv', sEd=null;
+const sfilt=useMonth=>SD.filter(l=>(SFC==='all'||l[2]===SFC)&&(!useMonth||SFM==='all'||mkey(l[1])===SFM));
+const sCusts=()=>[...new Set(SD.map(l=>l[2]))].sort((a,b)=>a.toLowerCase()<b.toLowerCase()?-1:1);
+function sPersist(){ if(!/edited/.test(SSRC))SSRC+=' (edited)'; try{localStorage.setItem('rpx_sales',JSON.stringify({SD,SSRC}))}catch(e){} }
+function srender(){
+  setSub();
+  const q=id=>document.getElementById(id);
+  if(SFC!=='all'&&!SD.some(l=>l[2]===SFC))SFC='all';
+  if(SFM!=='all'&&!SMON.includes(SFM))SFM='all';
+  q('sfM').innerHTML='<option value="all">All months</option>'+SMON.map(m=>`<option value="${m}"${m===SFM?' selected':''}>${esc(monName(m,SMON))}</option>`).join('');
+  q('sfC').innerHTML='<option value="all">All customers</option>'+sCusts().map(c=>`<option value="${esc(c)}"${c===SFC?' selected':''}>${esc(c)}</option>`).join('');
+  q('sView').innerHTML=[['inv','Invoices'],['mon','Month wise'],['cus','Customer wise']].map(([v,t])=>`<button type="button" data-v="${v}" aria-pressed="${v===SVIEW}">${t}</button>`).join('');
+  const SC=sfilt(false), SF=sfilt(true);
+  const nI=new Set(SF.map(l=>l[0])).size, nC=new Set(SF.map(l=>l[2])).size;
+  const tq=sumQ(SF), tv=SF.reduce((a,l)=>a+l[8],0), exq=sumQ(SF.filter(l=>l[3]==='export'));
+  q('sStats').innerHTML=
+   `<div class="stat"><span>Quantity sold</span><b>${fmtN(tq)} kg</b><span>${nI} invoices, ${nC} customers</span></div>`+
+   `<div class="stat"><span>Sales value</span><b>${fmtN(tv)} OMR</b><span>including VAT where charged</span></div>`+
+   `<div class="stat"><span>Average price</span><b>${tq?fmtN(tv/tq,3):'–'} OMR/kg</b><span>value divided by quantity</span></div>`+
+   `<div class="stat"><span>Export share</span><b>${tq?fmtN(exq/tq*100,1):'–'}%</b><span>${fmtN(exq)} kg exported</span></div>`;
+  const cm=SMON.filter(m=>SC.some(l=>mkey(l[1])===m));
+  const mcat=cm.map(m=>({label:monName(m,SMON),sub:new Set(SC.filter(l=>mkey(l[1])===m).map(l=>l[0])).size+' invoices',tip:monName(m,SMON)}));
+  const mq=m=>sumQ(SC.filter(l=>mkey(l[1])===m));
+  drawBars(q('chS1'),mcat,[{name:'Quantity sold',color:'var(--accent)',vals:cm.map(m=>mq(m)||null)}],{unit:'kg',d:0,height:260,maxBw:64,hlab:true,aria:'Quantity sold by month'});
+  drawBars(q('chS2'),mcat,[{name:'Sales value',color:'var(--s3)',vals:cm.map(m=>SC.filter(l=>mkey(l[1])===m).reduce((a,l)=>a+l[8],0)||null)}],{unit:'OMR',d:0,height:260,maxBw:64,hlab:true,aria:'Sales value by month'});
+  const sm=SMON.filter(m=>SF.some(l=>mkey(l[1])===m));
+  const dset=[...new Set(SF.map(l=>parseDia(l[4])))].sort((a,b)=>(a==null)-(b==null)||a-b);
+  legend(q('lgS3'),sm.map(m=>({c:gcol(m),n:monName(m,SMON)})));
+  drawBars(q('chS3'),dset.map(d=>({label:d==null?'Other':d+' mm',tip:d==null?OTHER:d+' mm'})),
+    sm.map(m=>({name:monName(m,SMON),color:gcol(m),vals:dset.map(d=>sumQ(SF.filter(l=>mkey(l[1])===m&&parseDia(l[4])===d))||null)})),{unit:'kg sold',d:0,height:300,aria:'Quantity sold by diameter and month'});
+  legend(q('lgS4'),[{c:'var(--s1)',n:'Domestic'},{c:'var(--s2)',n:'Export'}]);
+  drawBars(q('chS4'),mcat,[{name:'Domestic',color:'var(--s1)',txt:'#fff',vals:cm.map(m=>sumQ(SC.filter(l=>mkey(l[1])===m&&l[3]!=='export'))||null)},
+    {name:'Export',color:'var(--s2)',txt:'#0f1214',vals:cm.map(m=>sumQ(SC.filter(l=>mkey(l[1])===m&&l[3]==='export'))||null)}],{stacked:true,unit:'kg',d:0,height:260,aria:'Domestic and export quantity by month'});
+  // detail views
+  const sv=(v,d)=>fmtN(v,d);
+  let h='';
+  if(SVIEW==='inv'){
+    const im={}; SF.forEach(l=>{const o=im[l[0]]||(im[l[0]]={d:l[1],c:l[2],s:l[3],coils:0,kg:0,v:0,n:0});o.coils+=l[6];o.kg+=l[7];o.v+=l[8];o.n++});
+    const iv=Object.entries(im).sort((a,b)=>a[1].d<b[1].d?1:a[1].d>b[1].d?-1:(a[0]<b[0]?1:-1));
+    h='<table><thead><tr><th>Invoice</th><th>Date</th><th style="text-align:left">Customer</th><th>Market</th><th>Lines</th><th>Coils</th><th>Quantity kg</th><th>Value OMR</th><th></th></tr></thead><tbody>';
+    iv.forEach(([n,o])=>{h+=`<tr><td class="k">${esc(n)}</td><td>${longDate(o.d)}</td><td class="l">${esc(o.c)}</td><td>${o.s==='export'?'Export':'Domestic'}</td><td>${o.n}</td><td>${sv(o.coils)}</td><td>${sv(o.kg,1)}</td><td>${sv(o.v,2)}</td><td class="act"><button type="button" class="btn sm" data-edit="${esc(n)}">Edit</button> <button type="button" class="btn sm dng" data-del="${esc(n)}">Delete</button></td></tr>`});
+    h+=`<tr class="mh"><td class="k">Total</td><td></td><td></td><td></td><td></td><td>${sv(SF.reduce((a,l)=>a+l[6],0))}</td><td>${sv(tq,1)}</td><td>${sv(tv,2)}</td><td></td></tr>`;
+    h+='</tbody></table>';
+  } else if(SVIEW==='mon'){
+    h='<table><thead><tr><th style="text-align:left">Month / customer</th><th>Invoices</th><th>Quantity kg</th><th>Share of month</th><th>Value OMR</th><th>Avg OMR/kg</th></tr></thead><tbody>';
+    sm.forEach(m=>{
+      const L=SF.filter(l=>mkey(l[1])===m), kg=sumQ(L), v=L.reduce((a,l)=>a+l[8],0), ex=sumQ(L.filter(l=>l[3]==='export'));
+      h+=`<tr class="mh"><td class="k" style="font-weight:600">${esc(monName(m,SMON))}${ex?` <span style="font-weight:400;color:var(--ink3)">(export ${sv(ex)} kg)</span>`:''}</td><td>${new Set(L.map(l=>l[0])).size}</td><td>${sv(kg)}</td><td></td><td>${sv(v)}</td><td>${kg?sv(v/kg,3):'–'}</td></tr>`;
+      const cm2={}; L.forEach(l=>{const o=cm2[l[2]]||(cm2[l[2]]={kg:0,v:0,i:new Set()});o.kg+=l[7];o.v+=l[8];o.i.add(l[0])});
+      Object.entries(cm2).sort((a,b)=>b[1].kg-a[1].kg).forEach(([c,o])=>{h+=`<tr><td class="l"><button type="button" class="lnk" data-cust="${esc(c)}">${esc(c)}</button></td><td>${o.i.size}</td><td>${sv(o.kg)}</td><td>${kg?sv(o.kg/kg*100,1)+'%':'–'}</td><td>${sv(o.v)}</td><td>${o.kg?sv(o.v/o.kg,3):'–'}</td></tr>`});
+    });
+    h+='</tbody></table>';
+  } else {
+    h='<table><thead><tr><th style="text-align:left">Customer / month</th><th>Invoices</th><th>Quantity kg</th><th>Share of total</th><th>Value OMR</th><th>Avg OMR/kg</th></tr></thead><tbody>';
+    const cu={}; SF.forEach(l=>{(cu[l[2]]||(cu[l[2]]=[])).push(l)});
+    Object.entries(cu).sort((a,b)=>sumQ(b[1])-sumQ(a[1])).forEach(([c,L])=>{
+      const kg=sumQ(L), v=L.reduce((a,l)=>a+l[8],0);
+      h+=`<tr class="mh"><td class="k" style="font-weight:600;white-space:normal">${esc(c)}</td><td>${new Set(L.map(l=>l[0])).size}</td><td>${sv(kg)}</td><td>${tq?sv(kg/tq*100,1)+'%':'–'}</td><td>${sv(v)}</td><td>${kg?sv(v/kg,3):'–'}</td></tr>`;
+      sm.forEach(m=>{const M2=L.filter(l=>mkey(l[1])===m); if(!M2.length)return; const k2=sumQ(M2), v2=M2.reduce((a,l)=>a+l[8],0);
+        h+=`<tr><td class="l">${esc(monName(m,SMON))}</td><td>${new Set(M2.map(l=>l[0])).size}</td><td>${sv(k2)}</td><td>${kg?sv(k2/kg*100,1)+'%':'–'}</td><td>${sv(v2)}</td><td>${k2?sv(v2/k2,3):'–'}</td></tr>`});
+    });
+    h+='</tbody></table>';
+  }
+  q('sDetail').innerHTML=h;
+  q('sNotes').innerHTML='<li>Quantity and value come from the invoice lines. Diameter is read from the item description (for example "PP 14MM LEMON YELLOW"). Lines without a size, such as bailer twine, are grouped as Other.</li>'+
+    '<li>Credit notes appear as negative quantities and reduce the month they were issued in. The chart skips negative bars; tables show the net.</li>'+
+    '<li>Edits and deletes are kept in this browser, like uploads. They also change the Produced vs sold tab. "Use built-in data" goes back to the 25 Oct snapshot.</li>';
+}
+/* ---- edit / delete dialogs ---- */
+function sDlg(html){
+  let o=document.getElementById('sOv');
+  if(!o){o=document.createElement('div');o.id='sOv';o.className='ov';o.innerHTML='<div class="dlg" role="dialog" aria-modal="true"></div>';document.body.appendChild(o);
+    o.addEventListener('click',e=>{if(e.target===o)sClose()}); document.addEventListener('keydown',e=>{if(e.key==='Escape')sClose()})}
+  o.querySelector('.dlg').innerHTML=html; o.hidden=false; return o.querySelector('.dlg');
+}
+function sClose(){const o=document.getElementById('sOv'); if(o)o.hidden=true; sEd=null}
+function sEditOpen(no){
+  const L=SD.filter(l=>l[0]===no); if(!L.length)return;
+  sEd={orig:no,no:no,date:L[0][1],cust:L[0][2],seg:L[0][3],lines:L.map(l=>({desc:l[4],resin:l[5],coils:l[6],qty:l[7],val:l[8]})),err:''};
+  sEditDraw();
+}
+function sEditDraw(){
+  const e=sEd, dl=sDlg(
+   `<h2 style="margin:0 0 10px">Edit invoice ${esc(e.orig)}</h2>`+
+   `<datalist id="sCustList">${sCusts().map(c=>`<option value="${esc(c)}">`).join('')}</datalist>`+
+   `<div class="eg"><label>Invoice no<input id="eNo" value="${esc(e.no)}"></label><label>Date<input id="eDate" type="date" value="${esc(e.date)}"></label>`+
+   `<label>Customer<input id="eCust" list="sCustList" value="${esc(e.cust)}"></label><label>Market<select id="eSeg"><option value="domestic"${e.seg!=='export'?' selected':''}>Domestic</option><option value="export"${e.seg==='export'?' selected':''}>Export</option></select></label></div>`+
+   `<div class="tbl" style="margin-top:10px"><table class="etbl"><thead><tr><th style="text-align:left">Description</th><th>Resin</th><th>Coils</th><th>Quantity kg</th><th>Value OMR</th><th></th></tr></thead><tbody>`+
+   e.lines.map((l,i)=>`<tr><td><input data-i="${i}" data-f="desc" value="${esc(l.desc)}" style="min-width:220px"></td><td><input data-i="${i}" data-f="resin" value="${esc(l.resin)}" style="width:70px"></td><td><input data-i="${i}" data-f="coils" type="number" step="any" value="${l.coils}" style="width:80px"></td><td><input data-i="${i}" data-f="qty" type="number" step="any" value="${l.qty}" style="width:100px"></td><td><input data-i="${i}" data-f="val" type="number" step="any" value="${l.val}" style="width:100px"></td><td><button type="button" class="btn sm dng" data-rm="${i}" aria-label="Remove line">Remove</button></td></tr>`).join('')+
+   `</tbody></table></div>`+
+   `<p class="ferr" id="eErr" role="alert">${esc(e.err)}</p>`+
+   `<div class="eb"><button type="button" class="btn" id="eAdd">+ Add line</button><span style="flex:1"></span><button type="button" class="btn" id="eCancel">Cancel</button><button type="button" class="btn pri" id="eSave">Save changes</button></div>`);
+  const sync=()=>{e.no=dl.querySelector('#eNo').value.trim();e.date=dl.querySelector('#eDate').value;e.cust=dl.querySelector('#eCust').value.trim();e.seg=dl.querySelector('#eSeg').value};
+  dl.querySelectorAll('input[data-f]').forEach(inp=>inp.addEventListener('input',()=>{const l=e.lines[+inp.dataset.i],f=inp.dataset.f;l[f]=(f==='desc'||f==='resin')?inp.value:inp.value}));
+  dl.querySelectorAll('[data-rm]').forEach(b=>b.addEventListener('click',()=>{sync();e.lines.splice(+b.dataset.rm,1);sEditDraw()}));
+  dl.querySelector('#eAdd').addEventListener('click',()=>{sync();e.lines.push({desc:'',resin:'',coils:0,qty:0,val:0});sEditDraw()});
+  dl.querySelector('#eCancel').addEventListener('click',sClose);
+  dl.querySelector('#eSave').addEventListener('click',()=>{sync();sEditSave()});
+}
+function sEditSave(){
+  const e=sEd, fail=m=>{e.err=m;document.getElementById('eErr').textContent=m};
+  if(!e.no)return fail('Enter an invoice number.');
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(e.date))return fail('Enter a valid date.');
+  if(!e.cust)return fail('Enter the customer name.');
+  if(!e.lines.length)return fail('An invoice needs at least one line. Use Delete to remove the whole invoice.');
+  if(e.no!==e.orig&&SD.some(l=>l[0]===e.no))return fail('Invoice '+e.no+' already exists. Choose another number.');
+  const out=[];
+  for(const l of e.lines){
+    const qty=sNum(l.qty), val=sNum(l.val), co=sNum(l.coils);
+    if(qty===null)return fail('Every line needs a quantity.');
+    out.push([e.no,e.date,e.cust,e.seg,String(l.desc||'').trim(),String(l.resin||'').trim(),co||0,Math.round(qty*1000)/1000,Math.round((val||0)*1000)/1000]);
+  }
+  SD=SD.filter(l=>l[0]!==e.orig).concat(out); sPersist(); sMsg=null; sClose(); srefresh();
+}
+function sDelOpen(no){
+  const L=SD.filter(l=>l[0]===no); if(!L.length)return;
+  const dl=sDlg(`<h2 style="margin:0 0 8px">Delete invoice ${esc(no)}?</h2><p style="margin:0 0 12px;color:var(--ink2)">${esc(L[0][2])}, ${longDate(L[0][1])}. ${L.length} line${L.length>1?'s':''}, ${fmtN(sumQ(L),1)} kg, ${fmtN(L.reduce((a,l)=>a+l[8],0),2)} OMR. It will no longer count in the sales or produced-vs-sold figures. Uploading the register again can bring it back.</p><div class="eb"><span style="flex:1"></span><button type="button" class="btn" id="dCancel">Cancel</button><button type="button" class="btn dng" id="dOk">Delete invoice</button></div>`);
+  dl.querySelector('#dCancel').addEventListener('click',sClose);
+  dl.querySelector('#dOk').addEventListener('click',()=>{SD=SD.filter(l=>l[0]!==no); sPersist(); sMsg=null; sClose(); srefresh()});
+}
+async function sHandle(files){
+  files=[...files]; if(!files.length)return;
+  if(typeof XLSX==='undefined'){sMsg={err:'The Excel reader did not load. Check the connection and reload the page.'};sstatus();return}
+  let lines=[],warn=[],names=[];
+  for(const f of files){
+    try{
+      const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});
+      const sheets=wb.SheetNames.map(n=>({name:n,aoa:XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:null})}));
+      const o=parseSalesWorkbook(sheets);
+      if(!o.lines.length){warn.push(`${f.name}: no invoice lines found. The sheet needs columns such as Invoice #, Date, Customer Name, Description and Quantity.`);continue}
+      lines=lines.concat(o.lines); warn=warn.concat(o.warnings); names.push(f.name); PPC.keepFiles([f],'sales');
+    }catch(e){warn.push(`${f.name}: this file could not be read as an Excel workbook.`)}
+  }
+  if(!lines.length){sMsg={err:'No invoice lines were found in the uploaded file.',warn};sstatus();return}
+  const merge=document.getElementById('sMerge').checked;
+  if(merge){const nos=new Set(lines.map(l=>l[0])); SD=SD.filter(l=>!nos.has(l[0])).concat(lines)} else SD=lines;
+  SSRC=(merge?SSRC+' + ':'')+names.join(', ');
+  try{localStorage.setItem('rpx_sales',JSON.stringify({SD,SSRC}))}catch(e){}
+  sMsg={warn}; srefresh();
+}
+function srefresh(){sprep();sstatus();if(TAB==='sales')srender();if(TAB==='vs')vsrender()}
+
+/* ---- produced vs sold ---- */
+function prodWin(m){const ds=DATA.reports.map(r=>r[0]).filter(d=>mkey(d)===m).sort();return ds.length?[ds[0],ds[ds.length-1]]:null}
+function soldIn(m){
+  if(VSW!=='match')return SD.filter(l=>mkey(l[1])===m);
+  const w=prodWin(m); if(!w)return [];
+  return SD.filter(l=>mkey(l[1])===m&&l[1]>=w[0]&&l[1]<=w[1]&&!SKIPPED.includes(l[1]));
+}
+function vsrender(){
+  setSub();
+  const q=id=>document.getElementById(id);
+  // controls
+  q('vsMon').innerHTML=[['all','All months']].concat(MON.map(m=>[m,MLAB[m]])).map(([v,t])=>`<button type="button" data-v="${v}" aria-pressed="${String(v)===String(VSM)}">${t}</button>`).join('');
+  q('vsWin').innerHTML=[['match','Sales on production days'],['month','Whole month']].map(([v,t])=>`<button type="button" data-v="${v}" aria-pressed="${v===VSW}">${t}</button>`).join('');
+  const sel=VSM==='all'?MON:[VSM];
+  const prod=(m,d)=>DATA.rows.filter(r=>r[0]===m&&(d===undefined||r[2]===d)).reduce((a,r)=>a+r[3],0);
+  const sold=(m,d)=>soldIn(m).filter(l=>d===undefined||parseDia(l[4])===d).reduce((a,l)=>a+l[7],0);
+  const P=sel.reduce((a,m)=>a+prod(m),0), S=sel.reduce((a,m)=>a+sold(m),0);
+  q('vsStats').innerHTML=
+   `<div class="stat"><span>Produced</span><b>${fmtN(P)} kg</b><span>${VSM==='all'?'all months shown':MFULL[VSM]}</span></div>`+
+   `<div class="stat"><span>Sold</span><b>${fmtN(S)} kg</b><span>${VSW==='match'?'invoices on production days':'invoices in the whole month'}</span></div>`+
+   `<div class="stat"><span>Produced minus sold</span><b>${P-S>=0?'+':'−'}${fmtN(Math.abs(P-S))} kg</b><span>${P-S>=0?'more made than sold':'more sold than made'}</span></div>`+
+   `<div class="stat"><span>Sold as share of produced</span><b>${P?fmtN(S/P*100)+'%':'–'}</b><span>above 100% means stock was used</span></div>`;
+  const win=m=>{const w=prodWin(m);if(VSW!=='match'||!w)return VSW==='match'?'':'whole month';const a=+w[0].slice(8),b=+w[1].slice(8);return a+'–'+b+' '+MLAB[m]};
+  // V1 months
+  legend(q('lgV1'),[{c:'var(--s1)',n:'Produced'},{c:'var(--s2)',n:'Sold'}]);
+  drawBars(q('chV1'),MON.map(m=>({label:MLAB[m],sub:win(m),tip:MFULL[m]})),
+    [{name:'Produced',color:'var(--s1)',vals:MON.map(m=>prod(m)||null)},{name:'Sold',color:'var(--s2)',vals:MON.map(m=>sold(m)>0?sold(m):null)}],
+    {unit:'kg',d:0,height:300,maxBw:44,aria:'Produced and sold by month'});
+  // diameters in scope
+  const dset=new Set(); sel.forEach(m=>{DATA.rows.filter(r=>r[0]===m).forEach(r=>dset.add(r[2]));soldIn(m).forEach(l=>{const d=parseDia(l[4]);if(d!=null)dset.add(d)})});
+  let dias=[...dset].sort((a,b)=>a-b); const hasOther=sel.some(m=>sold(m,null)!==0);
+  const rows=dias.map(d=>({d,p:sel.reduce((a,m)=>a+prod(m,d),0),s:sel.reduce((a,m)=>a+sold(m,d),0)}));
+  if(hasOther)rows.push({d:null,p:0,s:sel.reduce((a,m)=>a+sold(m,null),0)});
+  q('tV2').textContent='Produced and sold by diameter, '+(VSM==='all'?'all months':MFULL[VSM]);
+  legend(q('lgV2'),[{c:'var(--s1)',n:'Produced'},{c:'var(--s2)',n:'Sold'}]);
+  drawBars(q('chV2'),rows.map(r=>({label:r.d==null?'Other':r.d+' mm',tip:r.d==null?OTHER:r.d+' mm'})),
+    [{name:'Produced',color:'var(--s1)',vals:rows.map(r=>r.p>0?r.p:null)},{name:'Sold',color:'var(--s2)',vals:rows.map(r=>r.s>0?r.s:null)}],{unit:'kg',d:0,height:320,aria:'Produced and sold by diameter'});
+  const pr=rows.filter(r=>r.d!=null&&r.p>0);
+  q('tV3').textContent='Sold as a share of produced, '+(VSM==='all'?'all months':MFULL[VSM]);
+  drawBars(q('chV3'),pr.map(r=>({label:r.d+' mm',tip:r.d+' mm: sold '+fmtN(r.s)+' kg of '+fmtN(r.p)+' kg produced'})),
+    [{name:'Sold as % of produced',color:'var(--s3)',vals:pr.map(r=>r.s>0?r.s/r.p*100:null)}],{unit:'%',d:0,height:260,aria:'Sold as percent of produced by diameter'});
+  // table: scope
+  let h='<table><thead><tr><th>Diameter</th><th>Produced kg</th><th>Sold kg</th><th>Produced minus sold</th><th>Sold % of produced</th></tr></thead><tbody>';
+  const tp=rows.reduce((a,r)=>a+r.p,0), ts=rows.reduce((a,r)=>a+r.s,0);
+  const sg=v=>(v>0?'+':v<0?'−':'')+fmtN(Math.abs(v));
+  rows.forEach(r=>{h+=`<tr><td class="k">${r.d==null?OTHER:r.d+' mm'}</td><td>${fmtN(r.p)}</td><td>${fmtN(r.s)}</td><td>${sg(r.p-r.s)}</td><td>${r.p>0?fmtN(r.s/r.p*100)+'%':'–'}</td></tr>`});
+  h+=`<tr class="mh"><td class="k">Total</td><td>${fmtN(tp)}</td><td>${fmtN(ts)}</td><td>${sg(tp-ts)}</td><td>${tp?fmtN(ts/tp*100)+'%':'–'}</td></tr>`;
+  q('vsTbl').innerHTML=h+'</tbody></table>';
+  // month by month matrix
+  const alld=new Set(); MON.forEach(m=>{DATA.rows.filter(r=>r[0]===m).forEach(r=>alld.add(r[2]));soldIn(m).forEach(l=>{const d=parseDia(l[4]);if(d!=null)alld.add(d)})});
+  const ad=[...alld].sort((a,b)=>a-b); const oth=MON.some(m=>sold(m,null)!==0);
+  h='<table><thead><tr><th rowspan="2">Diameter</th>'+MON.map(m=>`<th colspan="3" style="text-align:center">${MLAB[m]}</th>`).join('')+'</tr><tr>'+MON.map(()=>'<th>Made</th><th>Sold</th><th>Diff</th>').join('')+'</tr></thead><tbody>';
+  const dl=ad.concat(oth?[null]:[]);
+  dl.forEach(d=>{h+=`<tr><td class="k">${d==null?OTHER:d+' mm'}</td>`;MON.forEach(m=>{const p=d==null?0:prod(m,d),s=sold(m,d);h+=`<td>${p?fmtN(p):'–'}</td><td>${s?fmtN(s):'–'}</td><td>${(p||s)?sg(p-s):'–'}</td>`});h+='</tr>'});
+  q('vsMat').innerHTML=h+'</tbody></table>';
+  // small multiples
+  const mm=q('vsMulti'); mm.innerHTML='';
+  ad.forEach(d=>{
+    const c=document.createElement('div'); c.className='card'; c.innerHTML=`<h2>${d} mm</h2><small>Produced and sold by month, kg</small><div class="plot"></div>`; mm.appendChild(c);
+    drawBars(c.querySelector('.plot'),MON.map(m=>({label:MLAB[m],tip:d+' mm, '+MFULL[m]})),
+      [{name:'Produced',color:'var(--s1)',vals:MON.map(m=>prod(m,d)||null)},{name:'Sold',color:'var(--s2)',vals:MON.map(m=>sold(m,d)>0?sold(m,d):null)}],{unit:'kg',d:0,height:230,maxBw:30,aria:d+' mm produced and sold by month'});
+  });
+  const cov=SMON.filter(m=>!MON.includes(m)).map(m=>monName(m,SMON));
+  q('vsNotes').innerHTML=
+   '<li>Produced is the rope winding kg logged against each size. Sold is the invoice quantity in kg, with the size read from the item description.</li>'+
+   '<li>Produced minus sold shows whether stock grew (plus) or was drawn down (minus). It ignores opening stock, samples, wastage and returns, so read it as a guide.</li>'+
+   (VSW==='match'?'<li>Sales are counted only for the days covered by the production reports in each month (for example 21–31 Jul), so both sides cover the same dates.'+(SKIPPED.length?' Sales on '+SKIPPED.map(longDate).join(', ')+' are left out because that day\'s production report was left out.':'')+'</li>':'<li>Sales are counted for the whole calendar month. July and October production reports do not cover the full month, so those months look short on the produced side.</li>')+
+   (cov.length?`<li>Sales in ${cov.join(', ')} are not shown here because there is no production report for those months.</li>`:'')+
+   '<li>Production data comes from the Rope winding tab and sales data from the Sales tab. Upload new files there to update this page.</li>';
+}
+
+function setSub(){
+  const el=document.getElementById('sub'); let a,b,what;
+  if(TAB==='rope'){const d=DATA.reports.map(r=>r[0]).sort(); a=d[0]; b=d[d.length-1]; what='Rope winding output by diameter, month and machine, from the daily production reports';}
+  else if(TAB==='sales'){const d=SD.map(r=>r[1]).sort(); a=d[0]; b=d[d.length-1]; what='Sales by month, diameter and customer, from the sales dashboard invoices';}
+  else if(TAB==='vs'){const d=DATA.reports.map(r=>r[0]).sort(); a=d[0]; b=d[d.length-1]; what='Rope produced against rope sold, by month and diameter';}
+  else {const d=XD.map(r=>r[0]).sort(); a=d[0]; b=d[d.length-1]; what='Extruder (yarn) output per hour, by month and denier, from the daily plant production reports';}
+  el.textContent=a?`Polymer Products Co LLC. ${what} (${longDate(a)} to ${longDate(b)}).`:'Polymer Products Co LLC.';
+}
+function xstatus(){
+  const el=document.getElementById('xStatus'); el.className='status'+(xMsg&&xMsg.err?' err':'');
+  let h=xMsg&&xMsg.err?`<b>${esc(xMsg.err)}</b>`:`<b>Data in use:</b> ${esc(XSRC)}. ${XD.length} shift reports on ${new Set(XD.map(r=>r[0])).size} days.${PPC.mode==='viewer'?'':' Upload a daily extrusion production report workbook (one sheet per month) to replace it, or tick "Add to current data" to merge new dates.'}`;
+  if(xMsg&&xMsg.warn&&xMsg.warn.length)h+='<ul>'+xMsg.warn.slice(0,8).map(w=>`<li>${esc(w)}</li>`).join('')+(xMsg.warn.length>8?`<li>${xMsg.warn.length-8} more notes</li>`:'')+'</ul>';
+  el.innerHTML=h; document.getElementById('xReset').hidden=(PPC.mode==='publisher'?!ppcDraft('rpx_ext'):XD===XBUILTIN);
+}
+function xrender(){
+  setSub();
+  const full=XD.filter(rateOk), q=id=>document.getElementById(id);
+  const totIn=XD.reduce((a,r)=>a+r[6],0), totW=XD.reduce((a,r)=>a+r[9],0);
+  const hrsF=full.reduce((a,r)=>a+r[5],0), netF=full.reduce((a,r)=>a+netOf(r),0);
+  const days=new Set(XD.map(r=>r[0])).size;
+  q('xStats').innerHTML=
+   `<div class="stat"><span>Raw material in</span><b>${fmtN(totIn)} kg</b><span>${XD.length} shift reports on ${days} days</span></div>`+
+   `<div class="stat"><span>Net yarn made</span><b>${fmtN(totIn-totW)} kg</b><span>after ${fmtN(totW)} kg wastage</span></div>`+
+   `<div class="stat"><span>Net yarn per hour, full shifts</span><b>${hrsF?fmtN(netF/hrsF):'–'} kg/hr</b><span>${full.length} shifts of 10 to 14 hours</span></div>`+
+   `<div class="stat"><span>Wastage</span><b>${totIn?fmtN(totW/totIn*100,1):'–'}%</b><span>of raw material in</span></div>`;
+  const mcats=XMON.map(m=>({label:xlab(m),tip:xlab(m)}));
+  const mf=m=>full.filter(r=>mkey(r[0])===m);
+  // X1
+  drawBars(q('chX1'),XMON.map(m=>({label:xlab(m),sub:mf(m).length+' full shifts',tip:xlab(m)})),
+    [{name:'Net yarn per hour',color:'var(--accent)',vals:XMON.map(m=>{const s=mf(m),h=s.reduce((a,r)=>a+r[5],0);return h?s.reduce((a,r)=>a+netOf(r),0)/h:null})}],
+    {unit:'kg/hr',d:0,height:260,maxBw:64,hlab:true,aria:'Net yarn per hour by month'});
+  // X2
+  legend(q('lgX2'),XMON.map(m=>({c:xml(m),n:xlab(m)})));
+  const dn=(d)=>+d.slice(8)+' '+MNAMES[+d.slice(5,7)-1];
+  drawBars(q('chX2'),full.map(r=>({label:dn(r[0])+(r[1]==='B'?' B':''),tip:`${longDate(r[0])}, shift ${r[1]}, denier ${fmtN(r[4])}, wastage ${fmtN(r[9],1)} kg`})),
+    XMON.map(m=>({name:xlab(m),color:xml(m),vals:full.map(r=>mkey(r[0])===m?netOf(r)/r[5]:null)})),
+    {stacked:true,noInner:true,thin:true,unit:'kg/hr',d:0,height:300,aria:'Net yarn per hour for each shift report'});
+  // X3
+  const bands=BANDS.filter(b=>full.some(r=>denBand(r[4])===b));
+  legend(q('lgX3'),XMON.map(m=>({c:xml(m),n:xlab(m)})));
+  drawBars(q('chX3'),bands.map(b=>({label:b,sub:'denier',tip:'Denier '+b})),
+    XMON.map(m=>({name:xlab(m),color:xml(m),vals:bands.map(b=>{const s=full.filter(r=>mkey(r[0])===m&&denBand(r[4])===b),h=s.reduce((a,r)=>a+r[5],0);return h?s.reduce((a,r)=>a+netOf(r),0)/h:null})})),
+    {unit:'kg/hr',d:0,height:280,aria:'Net yarn per hour by denier band and month'});
+  // X4
+  const sum=(m,f)=>XD.filter(r=>mkey(r[0])===m).reduce((a,r)=>a+f(r),0);
+  legend(q('lgX4'),[{c:'var(--s1)',n:'PP'},{c:'var(--s2)',n:'HDPE'},{c:'var(--s3)',n:'Masterbatch and additives'}]);
+  drawBars(q('chX4'),mcats,[
+    {name:'PP',color:'var(--s1)',txt:'#fff',vals:XMON.map(m=>sum(m,r=>r[7])||null)},
+    {name:'HDPE',color:'var(--s2)',txt:'#0f1214',vals:XMON.map(m=>sum(m,r=>r[8])||null)},
+    {name:'Masterbatch and additives',color:'var(--s3)',txt:'#fff',vals:XMON.map(m=>{const v=sum(m,r=>r[6]-r[7]-r[8]);return v>0.5?v:null})}],
+    {stacked:true,unit:'kg',d:0,height:300,aria:'Raw material used by month'});
+  // X5
+  drawBars(q('chX5'),XMON.map(m=>({label:xlab(m),sub:fmtN(sum(m,r=>r[9]))+' kg',tip:xlab(m)})),
+    [{name:'Wastage',color:'var(--s2)',vals:XMON.map(m=>{const i=sum(m,r=>r[6]);return i?sum(m,r=>r[9])/i*100:null})}],
+    {unit:'% of raw material',d:1,height:240,maxBw:64,hlab:true,aria:'Wastage percent by month'});
+  // X6
+  drawBars(q('chX6'),XMON.map(m=>({label:xlab(m),sub:new Set(XD.filter(r=>mkey(r[0])===m).map(r=>r[0])).size+' days',tip:xlab(m)})),
+    [{name:'Run hours',color:'var(--s1)',vals:XMON.map(m=>sum(m,r=>r[5]||0)||null)}],
+    {unit:'hours',d:0,height:240,maxBw:64,hlab:true,aria:'Run hours by month'});
+  // table
+  q('xPT').textContent=`${XD.length} reports. Dimmed rows are short or unclear shifts and are left out of the per-hour averages.`;
+  let h='<table><thead><tr><th>Date</th><th>Shift</th><th>Run time</th><th>Denier</th><th>Hours</th><th>Raw in kg</th><th>Wastage kg</th><th>Net kg</th><th>Net kg/hr</th><th>Wastage %</th><th style="text-align:left">Remarks</th></tr></thead><tbody>';
+  XD.forEach(r=>{
+    const ok=rateOk(r), n=netOf(r);
+    h+=`<tr${ok?'':' class="dim"'}><td class="k">${longDate(r[0])}${ok?'':'<span class="tag">partial</span>'}</td><td>${esc(r[1])}</td><td>${r[2]&&r[3]?r[2]+'–'+r[3]:'–'}</td><td>${r[4]!=null?fmtN(r[4]):'–'}</td><td>${r[5]!=null?fmtN(r[5],1):'–'}</td><td>${fmtN(r[6],1)}</td><td>${fmtN(r[9],1)}</td><td>${fmtN(n,1)}</td><td>${r[5]?fmtN(n/r[5],1):'–'}</td><td>${r[6]?fmtN(r[9]/r[6]*100,1)+'%':'–'}</td><td class="l">${esc(r[10])}</td></tr>`;
+  });
+  q('xTbl').innerHTML=h+'</tbody></table>';
+  q('xNotes').innerHTML=
+   '<li>Net yarn is the PP, HDPE and masterbatch fed in, minus the wastage written on the report.</li>'+
+   '<li>Run hours are the stop time minus the start time. A stop earlier than the start means the shift ran past midnight. Shifts under 10 hours or over 14 hours are left out of the per-hour averages.</li>'+
+   `<li>Days the extruder ran: ${XMON.map(m=>xlab(m)+' '+new Set(XD.filter(r=>mkey(r[0])===m).map(r=>r[0])).size).join(', ')}. Monthly totals show what was logged, not full capacity.</li>`;
+}
+function xrefresh(){xprep();xstatus();if(TAB==='ext')xrender()}
+async function xHandle(files){
+  files=[...files]; if(!files.length)return;
+  if(typeof XLSX==='undefined'){xMsg={err:'The Excel reader did not load. Check the connection and reload the page.'};xstatus();return}
+  let recs=[],warn=[],names=[];
+  for(const f of files){
+    try{
+      const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});
+      const sheets=wb.SheetNames.map(n=>({name:n,aoa:XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:null})}));
+      const o=parseExtWorkbook(sheets);
+      if(!o.recs.length){warn.push(`${f.name}: no "Daily Plant Production Report" blocks found.`);continue}
+      recs=recs.concat(o.recs); warn=warn.concat(o.warnings); names.push(f.name); PPC.keepFiles([f],'extruder');
+    }catch(e){warn.push(`${f.name}: this file could not be read as an Excel workbook.`)}
+  }
+  if(!recs.length){xMsg={err:'No daily plant production reports were found in the uploaded file.',warn};xstatus();return}
+  const merge=document.getElementById('xMerge').checked;
+  if(merge){const keys=new Set(recs.map(r=>r[0]+'|'+r[1])); XD=XD.filter(r=>!keys.has(r[0]+'|'+r[1])).concat(recs)} else XD=recs;
+  XSRC=(merge?XSRC+' + ':'')+names.join(', ');
+  try{localStorage.setItem('rpx_ext',JSON.stringify({XD,XSRC}))}catch(e){}
+  xMsg={warn}; xrefresh();
+}
+function showTab(tb){
+  TAB=tb; const P={rope:'paneRope',ext:'paneExt',sales:'paneSales',vs:'paneVs'},B={rope:'tabRope',ext:'tabExt',sales:'tabSales',vs:'tabVs'};
+  for(const k in P){document.getElementById(P[k]).hidden=tb!==k; document.getElementById(B[k]).setAttribute('aria-pressed',tb===k)}
+  if(tb==='rope'){setSub();render()} else if(tb==='ext')xrender(); else if(tb==='sales')srender(); else vsrender();
+  try{history.replaceState(null,'',{rope:'#rope',ext:'#extruder',sales:'#sales',vs:'#compare'}[tb])}catch(e){}
+}
+
+document.getElementById('btnUp').addEventListener('click',()=>document.getElementById('fileIn').click());
+document.getElementById('fileIn').addEventListener('change',e=>{handleFiles(e.target.files);e.target.value=''});
+document.getElementById('btnReset').addEventListener('click',()=>{DATA=BUILTIN;SRC=BUILTIN_SRC;upMsg=null;try{localStorage.removeItem('rpx_data')}catch(e){}refresh()});
+['dragenter','dragover'].forEach(ev=>window.addEventListener(ev,e=>{e.preventDefault();if(PPC.mode!=='viewer')document.body.classList.add('drop')}));
+['dragleave','drop'].forEach(ev=>window.addEventListener(ev,e=>{e.preventDefault();document.body.classList.remove('drop')}));
+window.addEventListener('drop',e=>{if(PPC.mode!=='viewer'&&e.dataTransfer&&e.dataTransfer.files.length)(TAB==='rope'?handleFiles:TAB==='ext'?xHandle:sHandle)(e.dataTransfer.files)});
+document.getElementById('xUp').addEventListener('click',()=>document.getElementById('xFile').click());
+document.getElementById('xFile').addEventListener('change',e=>{xHandle(e.target.files);e.target.value=''});
+document.getElementById('xReset').addEventListener('click',()=>{XD=XBUILTIN;XSRC=XBUILTIN_SRC;xMsg=null;try{localStorage.removeItem('rpx_ext')}catch(e){}xrefresh()});
+document.getElementById('tabRope').addEventListener('click',()=>showTab('rope'));
+document.getElementById('tabExt').addEventListener('click',()=>showTab('ext'));
+document.getElementById('tabSales').addEventListener('click',()=>showTab('sales'));
+document.getElementById('tabVs').addEventListener('click',()=>showTab('vs'));
+document.getElementById('sfM').addEventListener('change',e=>{SFM=e.target.value==='all'?'all':+e.target.value;srender()});
+document.getElementById('sfC').addEventListener('change',e=>{SFC=e.target.value;srender()});
+document.getElementById('sView').addEventListener('click',e=>{const b=e.target.closest('button');if(b){SVIEW=b.dataset.v;srender()}});
+document.getElementById('sDetail').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.edit)sEditOpen(b.dataset.edit);else if(b.dataset.del)sDelOpen(b.dataset.del);else if(b.dataset.cust){SFC=b.dataset.cust;srender()}});
+document.getElementById('sUp').addEventListener('click',()=>document.getElementById('sFile').click());
+document.getElementById('sFile').addEventListener('change',e=>{sHandle(e.target.files);e.target.value=''});
+document.getElementById('sReset').addEventListener('click',()=>{SD=SBUILTIN;SSRC=SBUILTIN_NAME;sMsg=null;try{localStorage.removeItem('rpx_sales')}catch(e){}srefresh()});
+['vsMon','vsWin'].forEach(id=>document.getElementById(id).addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(id==='vsMon')VSM=b.dataset.v==='all'?'all':+b.dataset.v;else VSW=b.dataset.v;vsrender()}));
+function ppcDraft(k){try{return localStorage.getItem(k)!==null}catch(e){return false}}
+function ppcDrop(k){try{localStorage.removeItem(k)}catch(e){}}
+function ppcLoadDrafts(){
+  try{const sv=JSON.parse(localStorage.getItem('rpx_ext')||'null'); if(sv&&sv.XD&&sv.XD.length&&sv.XD[0].length===11){XD=sv.XD;XSRC=sv.XSRC||'Uploaded file'}}catch(e){}
+  try{const sv=JSON.parse(localStorage.getItem('rpx_data')||'null'); if(sv&&sv.DATA&&sv.DATA.reports&&sv.DATA.reports.length){DATA=sv.DATA;SRC=sv.SRC||'Uploaded file'}}catch(e){}
+  try{const sv=JSON.parse(localStorage.getItem('rpx_sales')||'null'); if(sv&&sv.SD&&sv.SD.length&&sv.SD[0].length===9){SD=sv.SD;SSRC=sv.SSRC||'Uploaded file'}}catch(e){}
+}
+function ppcUsePublished(pub){
+  if(pub.rope){BUILTIN=pub.rope.data;BUILTIN_SRC=pub.rope.source||'Published figures';DATA=BUILTIN;SRC=BUILTIN_SRC}
+  if(pub.extruder){XBUILTIN=pub.extruder.data;XBUILTIN_SRC=pub.extruder.source||'Published figures';XD=XBUILTIN;XSRC=XBUILTIN_SRC}
+  if(pub.sales){SBUILTIN=PPCSales.storeToLines(pub.sales.data);SBUILTIN_NAME=pub.sales.source||'Published figures';SD=SBUILTIN;SSRC=SBUILTIN_NAME}
+}
+const PPC_SETS=[
+  {id:'rope',dirty:()=>ppcDraft('rpx_data'),source:()=>SRC,payload:()=>({rows:DATA.rows,shifts:DATA.shifts,mshifts:DATA.mshifts,reports:DATA.reports}),
+   onPublished(){ppcDrop('rpx_data');BUILTIN=DATA;BUILTIN_SRC=SRC;upMsg=null;refresh()}},
+  {id:'extruder',dirty:()=>ppcDraft('rpx_ext'),source:()=>XSRC,payload:()=>XD,
+   onPublished(){ppcDrop('rpx_ext');XBUILTIN=XD;XBUILTIN_SRC=XSRC;xMsg=null;xrefresh()}},
+  {id:'sales',dirty:()=>ppcDraft('rpx_sales'),source:()=>SSRC,payload:()=>PPCSales.linesToStore(SD,PPC.published&&PPC.published.sales&&PPC.published.sales.data),
+   onPublished(){ppcDrop('rpx_sales');SBUILTIN=SD;SBUILTIN_NAME=SSRC;sMsg=null;srefresh()}}
+];
+async function ppcBoot(){
+  try{
+    const pub=await PPC.start();
+    document.querySelectorAll('.upl').forEach(u=>u.closest('.grp').classList.add('ppc-pub-only'));
+    if(pub)ppcUsePublished(pub);
+    if(PPC.mode!=='viewer')ppcLoadDrafts();
+    if(PPC.mode==='publisher')['btnReset','xReset','sReset'].forEach(id=>{document.getElementById(id).textContent='Discard unpublished changes'});
+    TAB={'#extruder':'ext','#sales':'sales','#compare':'vs'}[location.hash]||'rope';
+    PPC.mountBar({sets:PPC_SETS});
+    refresh(); xrefresh(); sprep(); sstatus(); showTab(TAB);
+  }finally{PPC.ready()}
+}
+ppcBoot();
+let rt; window.addEventListener('resize',()=>{clearTimeout(rt); rt=setTimeout(()=>{({rope:render,ext:xrender,sales:srender,vs:vsrender})[TAB]()},120)});
+</script>
+
+</body></html>
